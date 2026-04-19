@@ -1,0 +1,2396 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>超燃竞技场资料博客</title>
+  <link rel="icon" href="/img/main.png">
+  <style>
+    :root {
+      --primary-color: #ff6b35;
+      --secondary-color: #f7931e;
+      --highlight-color: #FFD700;
+    }
+    
+    /* 加载进度条 */
+    .loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #0a0a0a;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 9999;
+    }
+    
+    .loading-progress {
+      width: 80%;
+      height: 10px;
+      background: #333;
+      border-radius: 5px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    
+    .loading-bar {
+      height: 100%;
+      background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    
+    .loading-text {
+      color: #fff;
+      font-size: 1.2em;
+    }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: url('/img/black.png') center/cover no-repeat fixed;
+      background-color: #0a0a0a;
+      color: #e0e0e0;
+      font-family: 'Microsoft YaHei', sans-serif;
+      min-height: 100vh;
+    }
+    .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+    h1 {
+      text-align: center;
+      padding: 40px 0;
+      font-size: 2.5em;
+      color: var(--primary-color);
+      text-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.5);
+    }
+    .char-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+      gap: 20px;
+      padding: 20px;
+    }
+    .char-card {
+      background: rgba(255,255,255,0.05);
+      border-radius: 12px;
+      padding: 15px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      border: 1px solid rgba(var(--primary-color-rgb), 0.2);
+    }
+    .char-card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 10px 30px rgba(var(--primary-color-rgb), 0.3);
+      border-color: var(--primary-color);
+    }
+    .char-card img {
+      width: 100px;
+      height: 100px;
+      object-fit: contain;
+      border-radius: 8px;
+      margin-bottom: 10px;
+    }
+    .char-name { font-size: 1.1em; font-weight: bold; color: #fff; }
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 1000;
+      overflow-y: auto;
+    }
+    .modal.active { display: flex; justify-content: center; align-items: flex-start; padding: 40px 20px; }
+    .char-detail {
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 16px;
+      max-width: 800px;
+      width: 100%;
+      border: 2px solid var(--primary-color);
+      box-shadow: 0 0 40px rgba(var(--primary-color-rgb), 0.3);
+    }
+    .detail-header {
+      display: flex;
+      align-items: center;
+      gap: 20px;
+      padding: 30px;
+      border-bottom: 1px solid rgba(var(--primary-color-rgb), 0.3);
+    }
+    .detail-header img { width: 120px; height: 120px; object-fit: contain; border-radius: 12px; }
+    .detail-header h2 { color: var(--primary-color); font-size: 2em; }
+    .detail-content { padding: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+    .stats-section h3, .skills-section h3 { color: var(--primary-color); margin-bottom: 15px; font-size: 1.3em; }
+    .stats-table { width: 100%; border-collapse: collapse; }
+    .stats-table td { padding: 8px 12px; border-bottom: 1px solid rgba(255,255,255,0.1); }
+    .stats-table td:first-child { color: #aaa; }
+    .stats-table td:last-child { color: #fff; font-weight: bold; }
+    .skill-item {
+      background: rgba(var(--primary-color-rgb), 0.1);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--primary-color);
+    }
+    .skill-name { color: #fff; font-weight: bold; margin-bottom: 5px; }
+    .skill-type { font-size: 0.8em; color: var(--primary-color); margin-left: 8px; }
+    .skill-cd { font-size: 0.8em; color: #4ecdc4; margin-left: 8px; }
+    .skill-desc { color: #ccc; font-size: 0.9em; line-height: 1.5; }
+    .close-btn {
+      position: fixed;
+      top: 20px; right: 30px;
+      font-size: 2em;
+      color: #fff;
+      cursor: pointer;
+      z-index: 1001;
+    }
+    .close-btn:hover { color: var(--primary-color); }
+    .settings-btn {
+      position: fixed;
+      top: 20px; left: 30px;
+      width: 40px;
+      height: 40px;
+      cursor: pointer;
+      z-index: 1001;
+      background: rgba(255,255,255,0.1);
+      border-radius: 8px;
+      padding: 5px;
+      transition: all 0.3s;
+    }
+    .settings-btn:hover {
+      background: rgba(255,255,255,0.2);
+      transform: scale(1.1);
+    }
+    .settings-btn img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+    .settings-panel {
+      position: fixed;
+      top: 70px; left: 30px;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      z-index: 1000;
+      display: none;
+      border: 2px solid var(--primary-color);
+    }
+    .settings-panel.active { display: block; }
+    .settings-panel h3 {
+      color: var(--primary-color);
+      margin-bottom: 15px;
+      font-size: 1.2em;
+    }
+    .theme-options {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+    }
+    .theme-option {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      cursor: pointer;
+      border: 2px solid transparent;
+      transition: all 0.3s;
+    }
+    .theme-option:hover {
+      transform: scale(1.2);
+      border-color: #fff;
+    }
+    .theme-option.active {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 20px rgba(var(--primary-color-rgb), 0.5);
+    }
+    .theme-red { background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%); }
+    .theme-blue { background: linear-gradient(135deg, #4ecdc4 0%, #44a08d 100%); }
+    .theme-purple { background: linear-gradient(135deg, #9b59b6 0%, #8e44ad 100%); }
+    .theme-green { background: linear-gradient(135deg, #2ecc71 0%, #27ae60 100%); }
+    .theme-orange { background: linear-gradient(135deg, #e67e22 0%, #d35400 100%); }
+    @media (max-width: 768px) {
+      .detail-content { grid-template-columns: 1fr; }
+      h1 { font-size: 1.8em; }
+      .settings-panel { left: 20px; right: 20px; top: 70px; }
+    }
+  </style>
+</head>
+<body>
+    <!-- 加载进度条 -->
+    <div class="loading-screen" id="loadingScreen">
+      <div class="loading-text">加载中...</div>
+      <div class="loading-progress">
+        <div class="loading-bar" id="loadingBar"></div>
+      </div>
+    </div>
+    
+    <div class="settings-btn" onclick="toggleSettings()">
+      <img src="/img/shezhi.png" alt="设置">
+    </div>
+  <div class="settings-panel" id="settingsPanel">
+    <h3>主题设置</h3>
+    <div class="theme-options">
+      <div class="theme-option theme-red active" onclick="changeTheme('red')"></div>
+      <div class="theme-option theme-blue" onclick="changeTheme('blue')"></div>
+      <div class="theme-option theme-purple" onclick="changeTheme('purple')"></div>
+      <div class="theme-option theme-green" onclick="changeTheme('green')"></div>
+      <div class="theme-option theme-orange" onclick="changeTheme('orange')"></div>
+    </div>
+    
+    <h3 style="margin-top: 20px;">高亮颜色设置</h3>
+    <div class="theme-options">
+      <div class="theme-option" style="background: #FFD700;" onclick="changeHighlightColor('#FFD700')"></div>
+      <div class="theme-option" style="background: #FF6B35;" onclick="changeHighlightColor('#FF6B35')"></div>
+      <div class="theme-option" style="background: #4ECDC4;" onclick="changeHighlightColor('#4ECDC4')"></div>
+      <div class="theme-option" style="background: #9B59B6;" onclick="changeHighlightColor('#9B59B6')"></div>
+      <div class="theme-option" style="background: #2ECC71;" onclick="changeHighlightColor('#2ECC71')"></div>
+    </div>
+    
+    <h3 style="margin-top: 20px;">背景音乐</h3>
+    <div style="display: flex; gap: 15px; align-items: center;">
+      <button onclick="toggleBGM()" style="
+        padding: 10px 20px;
+        background: rgba(var(--primary-color-rgb), 0.2);
+        border: 1px solid var(--primary-color);
+        color: var(--primary-color);
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-size: 1em;
+      ">
+        播放/暂停
+      </button>
+      <div style="color: #ccc; font-size: 0.9em;">
+        BGM: <span id="bgmStatus">未播放</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="container">
+    <h1>🔥 超燃竞技场资料博客 🔥</h1>
+    <div class="char-grid">
+    <div class="char-card" onclick="showDetail('DongDong羊')">
+      <img src="/img/DongDongyang/image_632909048753371.png" alt="DongDong羊">
+      <div class="char-name">DongDong羊</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('丽芙卡')">
+      <img src="/img/lifuka/image_481563255366798.png" alt="丽芙卡">
+      <div class="char-name">丽芙卡</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('仓鼠米仔')">
+      <img src="/img/cangshumizai/image_983097457496195.png" alt="仓鼠米仔">
+      <div class="char-name">仓鼠米仔</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('仔仔熊')">
+      <img src="/img/zaizaixiong/image_771045074955802.png" alt="仔仔熊">
+      <div class="char-name">仔仔熊</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('仙人掌丘丘')">
+      <img src="/img/xianrenzhangqiuqiu/image_712526293798197.png" alt="仙人掌丘丘">
+      <div class="char-name">仙人掌丘丘</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('僵尸博士')">
+      <img src="/img/jiangshiboshi/image_842124412345444.png" alt="僵尸博士">
+      <div class="char-name">僵尸博士</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('元气丸子')">
+      <img src="/img/yuanqiwanzi/image_273977696703653.png" alt="元气丸子">
+      <div class="char-name">元气丸子</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('冷面千金竹月')">
+      <img src="/img/lengmianqianjinzhuyue/image_406126711528602.png" alt="冷面千金竹月">
+      <div class="char-name">冷面千金竹月</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('刺猬绷绷')">
+      <img src="/img/ciweibengbeng/image_019220309354228.png" alt="刺猬绷绷">
+      <div class="char-name">刺猬绷绷</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('劝学小子')">
+      <img src="/img/quanxuexiaozi/image_862998677397135.png" alt="劝学小子">
+      <div class="char-name">劝学小子</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('双面教师林野')">
+      <img src="/img/shuangmianjiaoshilinye/image_231466831752123.png" alt="双面教师林野">
+      <div class="char-name">双面教师林野</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('古风小生汪伦')">
+      <img src="/img/gufengxiaoshengwanglun/image_851693823127074.png" alt="古风小生汪伦">
+      <div class="char-name">古风小生汪伦</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('咸鱼蛋')">
+      <img src="/img/xianyudan/image_866173352257636.png" alt="咸鱼蛋">
+      <div class="char-name">咸鱼蛋</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('圆圆子')">
+      <img src="/img/yuanyuanzi/image_198573303320091.png" alt="圆圆子">
+      <div class="char-name">圆圆子</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('大祭司木西恩')">
+      <img src="/img/dajisimuxien/image_073470429543874.png" alt="大祭司木西恩">
+      <div class="char-name">大祭司木西恩</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('失心熊')">
+      <img src="/img/shixinxiong/image_480867714112531.png" alt="失心熊">
+      <div class="char-name">失心熊</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('宁红夜')">
+      <img src="/img/ninghongye/image_683754536190010.png" alt="宁红夜">
+      <div class="char-name">宁红夜</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('小太阳葵葵')">
+      <img src="/img/xiaotaiyangkuikui/image_028031197631780.png" alt="小太阳葵葵">
+      <div class="char-name">小太阳葵葵</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('小象哆哆')">
+      <img src="/img/xiaoxiangduoduo/image_273105482857449.png" alt="小象哆哆">
+      <div class="char-name">小象哆哆</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('极光女神典伊')">
+      <img src="/img/jiguangnvshendianyi/image_311566509615498.png" alt="极光女神典伊">
+      <div class="char-name">极光女神典伊</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('淘气丸子')">
+      <img src="/img/taoqiwanzi/image_518821198918526.png" alt="淘气丸子">
+      <div class="char-name">淘气丸子</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('游游白柳仙')">
+      <img src="/img/youyoubailiuxian/image_154673333378469.png" alt="游游白柳仙">
+      <div class="char-name">游游白柳仙</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('狸猫大力')">
+      <img src="/img/limaodali/image_301421282543552.png" alt="狸猫大力">
+      <div class="char-name">狸猫大力</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('玫瑰骑士')">
+      <img src="/img/meiguiqishi/image_145570407477300.png" alt="玫瑰骑士">
+      <div class="char-name">玫瑰骑士</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('瑶光星星马')">
+      <img src="/img/yaoguangxingxingma/image_986710836510782.png" alt="瑶光星星马">
+      <div class="char-name">瑶光星星马</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('画中少女格蕾')">
+      <img src="/img/huazhongshaonvgelei/image_302836785587315.png" alt="画中少女格蕾">
+      <div class="char-name">画中少女格蕾</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('葫芦娃七娃')">
+      <img src="/img/huluwaqiwa/image_134522556298159.png" alt="葫芦娃七娃">
+      <div class="char-name">葫芦娃七娃</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('蛋小粉')">
+      <img src="/img/danxiaofen/image_604494773641606.png" alt="蛋小粉">
+      <div class="char-name">蛋小粉</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('蛋小红')">
+      <img src="/img/danxiaohong/image_030370878296020.png" alt="蛋小红">
+      <div class="char-name">蛋小红</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('蛋小绿')">
+      <img src="/img/danxiaolv/image_832063919296932.png" alt="蛋小绿">
+      <div class="char-name">蛋小绿</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('蛋小蓝')">
+      <img src="/img/danxiaolan/image_680291658632175.png" alt="蛋小蓝">
+      <div class="char-name">蛋小蓝</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('蛋小黄')">
+      <img src="/img/danxiaohuang/image_842706612341380.png" alt="蛋小黄">
+      <div class="char-name">蛋小黄</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('蛋小黑')">
+      <img src="/img/danxiaohei/image_121157512549020.png" alt="蛋小黑">
+      <div class="char-name">蛋小黑</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('袋鼠嘟宝')">
+      <img src="/img/daishudubao/image_106866740974276.png" alt="袋鼠嘟宝">
+      <div class="char-name">袋鼠嘟宝</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('雷霆太奶')">
+      <img src="/img/leitingtainai/image_283862146968540.png" alt="雷霆太奶">
+      <div class="char-name">雷霆太奶</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('青年卢修斯')">
+      <img src="/img/qingnianluxiusi/image_913272107443395.png" alt="青年卢修斯">
+      <div class="char-name">青年卢修斯</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('饶舌诗人')">
+      <img src="/img/raosheshiren/image_466506704859664.png" alt="饶舌诗人">
+      <div class="char-name">饶舌诗人</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('魔鬼蛋')">
+      <img src="/img/moguidan/image_012197935194326.png" alt="魔鬼蛋">
+      <div class="char-name">魔鬼蛋</div>
+    </div>
+  
+    <div class="char-card" onclick="showDetail('黑拳瓦格纳')">
+      <img src="/img/heiquanwagena/image_150039940263218.png" alt="黑拳瓦格纳">
+      <div class="char-name">黑拳瓦格纳</div>
+    </div>
+  </div>
+  </div>
+
+  <div class="modal" id="modal">
+    <span class="close-btn" onclick="closeModal()">&times;</span>
+    
+      <div class="char-detail" id="detail-DongDong羊">
+        <div class="detail-header">
+          <img src="/img/DongDongyang/image_632909048753371.png" alt="DongDong羊">
+          <h2>DongDong羊</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>430</td></tr><tr><td>物理攻击力</td><td>36</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>110</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">咩咩枪 <span class="skill-type">普攻</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">发射毛团造成物理伤害,造成<span style="color: var(--highlight-color); font-weight: bold;">36</span>物理伤害（<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力）</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">Dong力全开 <span class="skill-type">被动（增益）</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">击杀触发攻速移速加成,<span style="color: var(--highlight-color); font-weight: bold;">1</span>. 参与击杀后进入「Dong力全开」状态，获得<span style="color: var(--highlight-color); font-weight: bold;">35%</span>移速+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>攻速加成；<span style="color: var(--highlight-color); font-weight: bold;">2</span>. 攻速加成可突破上限，持续<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒，最多叠加<span style="color: var(--highlight-color); font-weight: bold;">3</span>层</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">毛线球 <span class="skill-type">主动（伤害/减速）</span> <span class="skill-cd">5秒</span></div>
+        <div class="skill-desc">发射毛线球造成伤害+减速，标记后无视护甲,<span style="color: var(--highlight-color); font-weight: bold;">1</span>. 短暂蓄力发射毛线球，命中首个敌人造成<span style="color: var(--highlight-color); font-weight: bold;">58</span>物理伤害（<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">105%</span>物理攻击力）并减速<span style="color: var(--highlight-color); font-weight: bold;">50%</span>，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒；<span style="color: var(--highlight-color); font-weight: bold;">2</span>. 标记目标<span style="color: var(--highlight-color); font-weight: bold;">4</span>秒，期间普攻/技能无视敌人<span style="color: var(--highlight-color); font-weight: bold;">40%</span>护甲</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">咩咩手雷 <span class="skill-type">主动（控制/伤害）</span> <span class="skill-cd">8秒</span></div>
+        <div class="skill-desc">投掷手雷造成范围伤害+禁锢,手雷碰撞引爆，对范围内敌人造成<span style="color: var(--highlight-color); font-weight: bold;">53</span>物理伤害（<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力）并禁锢<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">DongDong弹幕 <span class="skill-type">主动（伤害）</span> <span class="skill-cd">24秒</span></div>
+        <div class="skill-desc">发射弹幕造成高额物理伤害,向前发射弹幕，对命中敌人造成<span style="color: var(--highlight-color); font-weight: bold;">104</span>物理伤害（<span style="color: var(--highlight-color); font-weight: bold;">50</span>+<span style="color: var(--highlight-color); font-weight: bold;">150%</span>物理攻击力）</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-丽芙卡">
+        <div class="detail-header">
+          <img src="/img/lifuka/image_481563255366798.png" alt="丽芙卡">
+          <h2>丽芙卡</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>385</td></tr><tr><td>物理攻击力</td><td>26</td></tr><tr><td>物理防御</td><td>25 | 20%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>29</td></tr><tr><td>法术防御</td><td>24 | 19%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>9%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">能量球 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">丽芙卡使用能量球发射一个能量飞弹攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">26</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">奥能印记 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">丽芙卡的技能会为敌方蛋仔施加<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒的「奥能印记」，使用普攻或技能命中印记目标会消耗印记，自身获得<span style="color: var(--highlight-color); font-weight: bold;">35%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒，并对目标造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">奥能法球 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6/5.5/5/4.5秒</span></div>
+        <div class="skill-desc">丽芙卡向前推出一个奥能法球，法球会越滚越大，伤害随法球体积提升最多<span style="color: var(--highlight-color); font-weight: bold;">50%</span>，命中障碍物或首个敌人时爆炸，对范围内的敌人造成至少<span style="color: var(--highlight-color); font-weight: bold;">51</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">28</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>法术攻击力)和<span style="color: var(--highlight-color); font-weight: bold;">30%</span>减速效果，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">奥能喵掌 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">13/11.5/10/8.5秒</span></div>
+        <div class="skill-desc">丽芙卡在指定区域召唤两只奥能喵爪向中心击掌，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">32</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力)和<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒的眩晕效果，敌人会被喵爪拍向击掌中心处。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">豹豹爆弹 <span class="skill-type">主动/伤害</span> <span class="skill-cd">24/22/20秒</span></div>
+        <div class="skill-desc">丽芙卡向目标区域投掷一个豹豹爆弹，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">102</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">70</span>+<span style="color: var(--highlight-color); font-weight: bold;">110%</span>法术攻击力)，对区域中心敌人造成额外<span style="color: var(--highlight-color); font-weight: bold;">50%</span>伤害。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-仓鼠米仔">
+        <div class="detail-header">
+          <img src="/img/cangshumizai/image_983097457496195.png" alt="仓鼠米仔">
+          <h2>仓鼠米仔</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>380</td></tr><tr><td>物理攻击力</td><td>25</td></tr><tr><td>物理防御</td><td>25 | 20%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>28</td></tr><tr><td>法术防御</td><td>20 | 17%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">美味瓜子 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">仓鼠米仔画出一个金瓜子并发射攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">25</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">乐在画中 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">仓鼠米仔的技能命中敌人时，自身会提升<span style="color: var(--highlight-color); font-weight: bold;">18%</span>移动速度。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">落笔生花 <span class="skill-type">主动/伤害</span> <span class="skill-cd">3秒</span></div>
+        <div class="skill-desc">仓鼠米仔绘制一朵花并朝指定方向发射，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">40</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">16</span>+<span style="color: var(--highlight-color); font-weight: bold;">85%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">破土新芽 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">12秒</span></div>
+        <div class="skill-desc">仓鼠米仔绘制一颗史莱姆球，短暂延迟后史莱姆球变大，击飞范围内的敌人并造成<span style="color: var(--highlight-color); font-weight: bold;">31</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力)。自身被命中时会被弹起但不会受到伤害。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">春光绘卷 <span class="skill-type">主动/伤害</span> <span class="skill-cd">22秒</span></div>
+        <div class="skill-desc">仓鼠米仔开始绘画春日绘卷，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。期间再次释放可提前结束绘画，结束时绘卷会爆发对范围内的敌人造成伤害，绘画的时间越长伤害越高，最高造成<span style="color: var(--highlight-color); font-weight: bold;">150</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">100</span>+<span style="color: var(--highlight-color); font-weight: bold;">180%</span>法术攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-仔仔熊">
+        <div class="detail-header">
+          <img src="/img/zaizaixiong/image_771045074955802.png" alt="仔仔熊">
+          <h2>仔仔熊</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>450</td></tr><tr><td>物理攻击力</td><td>30</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>26</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">拐杖糖 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">仔仔熊手持拐杖糖挥击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">自我奖赏 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">仔仔熊受到敌人攻击时，若生命值低于<span style="color: var(--highlight-color); font-weight: bold;">30%</span>时，会将自己装入礼物盒中，冷却时间<span style="color: var(--highlight-color); font-weight: bold;">90</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">惊喜礼物 <span class="skill-type">主动/增益</span> <span class="skill-cd">5秒</span></div>
+        <div class="skill-desc">仔仔熊向自身和范围内的每个队友扔出一个礼物，随机扔出红「攻击」、绿「回复」、蓝「移速」、金「所有能力」礼物，己方拾取后获得相应效果，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。红色礼物：提升目标<span style="color: var(--highlight-color); font-weight: bold;">12%</span>/<span style="color: var(--highlight-color); font-weight: bold;">16%</span>/<span style="color: var(--highlight-color); font-weight: bold;">20%</span>/<span style="color: var(--highlight-color); font-weight: bold;">24%</span>物理与法术攻击力；绿色礼物：目标每秒获得<span style="color: var(--highlight-color); font-weight: bold;">27</span>治疗回复(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">25%</span>法术攻击力)；蓝色礼物：提升目标<span style="color: var(--highlight-color); font-weight: bold;">12%</span>/<span style="color: var(--highlight-color); font-weight: bold;">16%</span>/<span style="color: var(--highlight-color); font-weight: bold;">20%</span>/<span style="color: var(--highlight-color); font-weight: bold;">24%</span>移动速度；金色礼物：具有以上所有颜色礼物的效果。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">欢乐派对 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6秒</span></div>
+        <div class="skill-desc">仔仔熊手持拐杖糖轻舞一下，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">52</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">45%</span>法术攻击力)并减少<span style="color: var(--highlight-color); font-weight: bold;">20%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">爱的抱抱 <span class="skill-type">主动/增益</span> <span class="skill-cd">28秒</span></div>
+        <div class="skill-desc">仔仔熊将队友装进礼盒举在头顶，使其免疫伤害并每<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒获得<span style="color: var(--highlight-color); font-weight: bold;">29</span>治疗回复(<span style="color: var(--highlight-color); font-weight: bold;">6</span>+<span style="color: var(--highlight-color); font-weight: bold;">20%</span>法术攻击力+<span style="color: var(--highlight-color); font-weight: bold;">4%</span>自身最大生命值)，期间目标不受操控。再次释放技能或<span style="color: var(--highlight-color); font-weight: bold;">2</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒后自动扔出队友，并使目标提升<span style="color: var(--highlight-color); font-weight: bold;">20</span>/<span style="color: var(--highlight-color); font-weight: bold;">40</span>/<span style="color: var(--highlight-color); font-weight: bold;">60</span>物理与法术攻击力、<span style="color: var(--highlight-color); font-weight: bold;">20</span>/<span style="color: var(--highlight-color); font-weight: bold;">35</span>/<span style="color: var(--highlight-color); font-weight: bold;">50</span>物理与法术防御力，持续<span style="color: var(--highlight-color); font-weight: bold;">7</span>s。该技能可对自己释放。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-仙人掌丘丘">
+        <div class="detail-header">
+          <img src="/img/xianrenzhangqiuqiu/image_712526293798197.png" alt="仙人掌丘丘">
+          <h2>仙人掌丘丘</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>420</td></tr><tr><td>物理攻击力</td><td>36</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>110</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>18 | 15%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">投掷飞镖 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">仙人掌丘丘投掷一枚飞镖攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">36</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">连续飞镖 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">仙人掌丘丘使用技能后，下次普攻会投掷两枚飞镖，两枚飞镖的伤害系数均为<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">8</span>。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">分散镖 <span class="skill-type">主动/伤害</span> <span class="skill-cd">7/6/5/4秒</span></div>
+        <div class="skill-desc">仙人掌丘丘向前方散开投掷三枚飞镖，每一枚飞镖对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">47</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">18</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">蜷缩逃跑 <span class="skill-type">主动/位移</span> <span class="skill-cd">8/7/6/5秒</span></div>
+        <div class="skill-desc">仙人掌丘丘蜷缩躲进盆栽，朝指定方向翻滚一段距离。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">快速投掷 <span class="skill-type">主动/伤害</span> <span class="skill-cd">15秒</span></div>
+        <div class="skill-desc">仙人掌丘丘进入练习状态，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。期间朝指定方向连续投掷<span style="color: var(--highlight-color); font-weight: bold;">10</span>枚飞镖，每一枚飞镖对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">21</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">8</span>+<span style="color: var(--highlight-color); font-weight: bold;">35%</span>物理攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-僵尸博士">
+        <div class="detail-header">
+          <img src="/img/jiangshiboshi/image_842124412345444.png" alt="僵尸博士">
+          <h2>僵尸博士</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>500</td></tr><tr><td>物理攻击力</td><td>25</td></tr><tr><td>物理防御</td><td>10 | 9%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>5 | 5%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">手锯 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">僵尸博士挥动手锯攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">25</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">僵尸因子 <span class="skill-type">被动/伤害</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">僵尸博士技能命中敌人时，会对其施加「僵尸因子」，持续<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。「僵尸因子」每秒对敌人造成基于僵尸博士<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">6%</span>最大生命值的伤害并减少<span style="color: var(--highlight-color); font-weight: bold;">20%</span>移动速度，期间敌人死亡会变为僵尸蛋，僵尸蛋的属性受僵尸博士的最大生命值加成。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">致命口味 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6.5/6/5.5/5秒</span></div>
+        <div class="skill-desc">僵尸博士用舌头横扫前方，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">42</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">3%</span>自身最大生命值)。命中携带「僵尸因子」的敌人会额外减少目标<span style="color: var(--highlight-color); font-weight: bold;">20%</span>移动速度。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">药剂投掷 <span class="skill-type">主动/恢复/伤害</span> <span class="skill-cd">6秒</span></div>
+        <div class="skill-desc">僵尸博士向目标地点投掷药剂，发生碰撞时药剂会爆炸，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">40</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">3%</span>自身最大生命值)，命中自身时获得<span style="color: var(--highlight-color); font-weight: bold;">25</span>治疗回复(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">3%</span>目标最大生命值)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">潜能爆发 <span class="skill-type">主动/恢复/增益</span> <span class="skill-cd">25秒</span></div>
+        <div class="skill-desc">僵尸博士激发潜藏的能量，提升<span style="color: var(--highlight-color); font-weight: bold;">20%</span>移动速度，提升<span style="color: var(--highlight-color); font-weight: bold;">30%</span>最大生命值和体型，持续<span style="color: var(--highlight-color); font-weight: bold;">10</span>/<span style="color: var(--highlight-color); font-weight: bold;">13</span>/<span style="color: var(--highlight-color); font-weight: bold;">16</span>秒，立即回复<span style="color: var(--highlight-color); font-weight: bold;">10%</span>/<span style="color: var(--highlight-color); font-weight: bold;">15%</span>/<span style="color: var(--highlight-color); font-weight: bold;">20%</span>已损失生命值。期间技能命中敌方蛋仔时回复<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">5</span>/<span style="color: var(--highlight-color); font-weight: bold;">9</span>/<span style="color: var(--highlight-color); font-weight: bold;">13%</span>已损失最大生命值，普攻附带<span style="color: var(--highlight-color); font-weight: bold;">3%</span>自身最大生命值伤害。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-元气丸子">
+        <div class="detail-header">
+          <img src="/img/yuanqiwanzi/image_273977696703653.png" alt="元气丸子">
+          <h2>元气丸子</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>450</td></tr><tr><td>物理攻击力</td><td>37</td></tr><tr><td>物理防御</td><td>35 | 26%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>20</td></tr><tr><td>法术防御</td><td>22 | 18%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">鸡腿 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">元气丸子使用鸡腿进行攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">37</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">鸡腿之力 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">元气丸子每隔<span style="color: var(--highlight-color); font-weight: bold;">8</span>秒，下一次普攻获得强化，伤害系数变为<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>倍。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">鸡腿挥击 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">8秒</span></div>
+        <div class="skill-desc">元气丸子抡起鸡腿旋转一圈，对范围内的敌人造成失控和<span style="color: var(--highlight-color); font-weight: bold;">66</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>物理攻击力)；然后重重砸下，击飞并短暂眩晕敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">66</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>物理攻击力)。技能期间，元气丸子获得霸体效果。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">鸡腿大降价 <span class="skill-type">主动/控制</span> <span class="skill-cd">7/6.5/6/5.5秒</span></div>
+        <div class="skill-desc">元气丸子掏出喇叭大喊并发出音波，使范围内的敌人降低<span style="color: var(--highlight-color); font-weight: bold;">30%</span>移动速度。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">鸡腿全垒打 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">18秒</span></div>
+        <div class="skill-desc">元气丸子按键进行蓄力，<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒后重重挥出，最高造成<span style="color: var(--highlight-color); font-weight: bold;">147</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">80</span>+<span style="color: var(--highlight-color); font-weight: bold;">180%</span>物理攻击力)并大力击退敌人。蓄力时间越久，伤害越高，期间再次释放技能，会提前结束蓄力并挥出。技能期间，元气丸子获得霸体与<span style="color: var(--highlight-color); font-weight: bold;">50%</span>减伤效果。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-冷面千金竹月">
+        <div class="detail-header">
+          <img src="/img/lengmianqianjinzhuyue/image_406126711528602.png" alt="冷面千金竹月">
+          <h2>冷面千金竹月</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>420</td></tr><tr><td>物理攻击力</td><td>33</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>35%</td></tr><tr><td>物理暴击伤害</td><td>135%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">唐横刀 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">千金竹月挥动横刀攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">33</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">游刃有余 <span class="skill-type">被动/伤害</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">千金竹月的技能能够暴击，应用物理暴击率。物理暴击提高<span style="color: var(--highlight-color); font-weight: bold;">35%</span>，物理暴伤降低为<span style="color: var(--highlight-color); font-weight: bold;">135%</span>。物理暴击率超出<span style="color: var(--highlight-color); font-weight: bold;">100%</span>时，每<span style="color: var(--highlight-color); font-weight: bold;">1%</span>提供<span style="color: var(--highlight-color); font-weight: bold;">1%</span>的暴伤加成。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">吴钩雪明 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6秒</span></div>
+        <div class="skill-desc">千金竹月向前踏步劈出纵斩，造成<span style="color: var(--highlight-color); font-weight: bold;">41</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>物理攻击力)；该技能可在<span style="color: var(--highlight-color); font-weight: bold;">7</span>秒内再次使用，竹月打出回身斩，对面前<span style="color: var(--highlight-color); font-weight: bold;">180</span>度的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">61</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">110%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">事了拂衣 <span class="skill-type">主动/位移</span> <span class="skill-cd">5秒</span></div>
+        <div class="skill-desc">千金竹月轻拂衣摆，凝聚刀气残影向前挥出，造成<span style="color: var(--highlight-color); font-weight: bold;">31</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">14</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)并造成<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒<span style="color: var(--highlight-color); font-weight: bold;">40%</span>减速，同时自身朝瞄准方向的反方向撤步并强化<span style="color: var(--highlight-color); font-weight: bold;">4</span>秒内的下一次普攻，使下一次普攻变为闪身冲向敌人并挥出横斩，造成<span style="color: var(--highlight-color); font-weight: bold;">33</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)并造成<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒<span style="color: var(--highlight-color); font-weight: bold;">40%</span>减速。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">飒沓流星 <span class="skill-type">主动/伤害/位移</span> <span class="skill-cd">24秒</span></div>
+        <div class="skill-desc">千金竹月在短暂蓄势后获得(<span style="color: var(--highlight-color); font-weight: bold;">50</span>+<span style="color: var(--highlight-color); font-weight: bold;">15</span>*等级)的护盾，凝聚刀气残影并向瞄准方向突进。自身对路径上的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">31</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">10</span>+<span style="color: var(--highlight-color); font-weight: bold;">65%</span>物理攻击力)并眩晕<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒，短暂延迟后残影会再次对路径上的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">43</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">10</span>+<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)并将所有目标向自身牵引，每命中一名角色额外获得<span style="color: var(--highlight-color); font-weight: bold;">100%</span>攻击力的护盾。护盾持续<span style="color: var(--highlight-color); font-weight: bold;">7</span>秒。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-刺猬绷绷">
+        <div class="detail-header">
+          <img src="/img/ciweibengbeng/image_019220309354228.png" alt="刺猬绷绷">
+          <h2>刺猬绷绷</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>420</td></tr><tr><td>物理攻击力</td><td>28</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>27</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>12%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">幽魂攻击 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">绷绷发射光球攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">28</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">鬼屋幽灵 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">绷绷每隔<span style="color: var(--highlight-color); font-weight: bold;">10</span>秒召唤一只幽灵围绕跟随自己，同时存在最多<span style="color: var(--highlight-color); font-weight: bold;">3</span>只。幽灵会主动向距离绷绷小于<span style="color: var(--highlight-color); font-weight: bold;">10</span>米的敌人发起攻击，命中敌人时造成<span style="color: var(--highlight-color); font-weight: bold;">32</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">21</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力)，随后自身消散。绷绷初始获得<span style="color: var(--highlight-color); font-weight: bold;">5%</span>法术吸血，每升一级额外获得<span style="color: var(--highlight-color); font-weight: bold;">1%</span>法术吸血。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">幽灵追踪 <span class="skill-type">主动/伤害</span> <span class="skill-cd">5秒</span></div>
+        <div class="skill-desc">绷绷召唤幽灵向前发射，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">46</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力)，幽灵飞到最大距离后会返回绷绷身边并跟随。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">化身幽灵 <span class="skill-type">主动/增益</span> <span class="skill-cd">15秒</span></div>
+        <div class="skill-desc">绷绷化身幽灵形态，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>/<span style="color: var(--highlight-color); font-weight: bold;">2</span>/<span style="color: var(--highlight-color); font-weight: bold;">2</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>/<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。期间获得<span style="color: var(--highlight-color); font-weight: bold;">25%</span>/<span style="color: var(--highlight-color); font-weight: bold;">30%</span>/<span style="color: var(--highlight-color); font-weight: bold;">35%</span>/<span style="color: var(--highlight-color); font-weight: bold;">40%</span>减伤效果，提升<span style="color: var(--highlight-color); font-weight: bold;">7%</span>/<span style="color: var(--highlight-color); font-weight: bold;">14%</span>/<span style="color: var(--highlight-color); font-weight: bold;">21%</span>/<span style="color: var(--highlight-color); font-weight: bold;">28%</span>法术吸血。幽灵形态期间，绷绷无法释放普攻。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">幽游伙伴 <span class="skill-type">主动/伤害</span> <span class="skill-cd">28秒</span></div>
+        <div class="skill-desc">绷绷立即召唤出<span style="color: var(--highlight-color); font-weight: bold;">4</span>/<span style="color: var(--highlight-color); font-weight: bold;">6</span>/<span style="color: var(--highlight-color); font-weight: bold;">8</span>个幽灵，幽灵可存活<span style="color: var(--highlight-color); font-weight: bold;">12</span>秒。期间持续对范围内的敌人发起攻击，每个幽灵每次攻击造成<span style="color: var(--highlight-color); font-weight: bold;">33</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">12%</span>法术攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-劝学小子">
+        <div class="detail-header">
+          <img src="/img/quanxuexiaozi/image_862998677397135.png" alt="劝学小子">
+          <h2>劝学小子</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>420</td></tr><tr><td>物理攻击力</td><td>34</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>110</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>20 | 17%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">光能射击 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">劝学小子发射光能粒子攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">34</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">循序渐进 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">劝学小子会在战斗中提升自己，每次技能命中敌人时，提升<span style="color: var(--highlight-color); font-weight: bold;">5</span>物理穿透，持续<span style="color: var(--highlight-color); font-weight: bold;">8</span>秒，可叠加最多<span style="color: var(--highlight-color); font-weight: bold;">6</span>层。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">闪耀冲刺 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">11/10/9/8秒</span></div>
+        <div class="skill-desc">劝学小子瞬间闪烁传送至目标地点，刷新「能量光波」的冷却。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">能量光波 <span class="skill-type">主动/伤害</span> <span class="skill-cd">5/4.5/4/3.5秒</span></div>
+        <div class="skill-desc">劝学小子使用手表发射器向前发射能量光波，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">56</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">120%</span>物理攻击力)并触发攻击特效。该技能命中敌人时，会返还所有技能<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒冷却。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">真理脉冲 <span class="skill-type">主动/伤害</span> <span class="skill-cd">36/34/32秒</span></div>
+        <div class="skill-desc">劝学小子向前发射真理脉冲，发生碰撞时会爆炸，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">56</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">120%</span>物理攻击力)。当敌人生命值低于<span style="color: var(--highlight-color); font-weight: bold;">50%</span>时，生命越低，受到的伤害越高。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-双面教师林野">
+        <div class="detail-header">
+          <img src="/img/shuangmianjiaoshilinye/image_231466831752123.png" alt="双面教师林野">
+          <h2>双面教师林野</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>440</td></tr><tr><td>物理攻击力</td><td>34</td></tr><tr><td>物理防御</td><td>25 | 20%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105(+25)</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">备课本 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">林野发射知识光点攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">34</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">双面人生 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">林野使用绝招可以在摇滚和工作形态中切换，<span style="color: var(--highlight-color); font-weight: bold;">1</span>级时固定学习绝招，根据绝招等级和形态获得属性加成，工作形态攻速提高<span style="color: var(--highlight-color); font-weight: bold;">25</span>/<span style="color: var(--highlight-color); font-weight: bold;">35</span>/<span style="color: var(--highlight-color); font-weight: bold;">45</span>，摇滚形态物理和法术防御提高<span style="color: var(--highlight-color); font-weight: bold;">20</span>/<span style="color: var(--highlight-color); font-weight: bold;">30</span>/<span style="color: var(--highlight-color); font-weight: bold;">40</span>。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">集中注意力! <span class="skill-type">主动/伤害</span> <span class="skill-cd">6秒</span></div>
+        <div class="skill-desc">林野向瞄准方向连续投掷三枚粉笔头，造成<span style="color: var(--highlight-color); font-weight: bold;">29</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力)，首发粉笔会额外造成<span style="color: var(--highlight-color); font-weight: bold;">30%</span>伤害并减速<span style="color: var(--highlight-color); font-weight: bold;">40%</span>，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">物理教导 <span class="skill-type">主动/控制</span> <span class="skill-cd">8.5/8/7.5/7秒</span></div>
+        <div class="skill-desc">林野忍无可忍向瞄准方向扔出备课本，造成<span style="color: var(--highlight-color); font-weight: bold;">49</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>物理攻击力)并眩晕命中的目标<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">75</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">闪亮出击 <span class="skill-type">主动/位移/控制</span> <span class="skill-cd">8.5/7.5/6.5/5.5秒</span></div>
+        <div class="skill-desc">林野向瞄准方向前空翻并用力挥动乐器砸向地面，击飞终点范围内敌人并造成<span style="color: var(--highlight-color); font-weight: bold;">76</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">45</span>+<span style="color: var(--highlight-color); font-weight: bold;">90%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">横扫全场 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6秒</span></div>
+        <div class="skill-desc">林野向前舍身挥动乐器打击周围的敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">86</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">55</span>+<span style="color: var(--highlight-color); font-weight: bold;">90%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">摇滚开场 <span class="skill-type">主动/增益</span> <span class="skill-cd">10/9/8秒</span></div>
+        <div class="skill-desc">林野进入摇滚形态，向指定方向滑铲登场对路径上的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">39</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力)并减速<span style="color: var(--highlight-color); font-weight: bold;">30%</span>，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-古风小生汪伦">
+        <div class="detail-header">
+          <img src="/img/gufengxiaoshengwanglun/image_851693823127074.png" alt="古风小生汪伦">
+          <h2>古风小生汪伦</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>430</td></tr><tr><td>物理攻击力</td><td>27</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>95</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>29</td></tr><tr><td>法术防御</td><td>24 | 19%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">金猪 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">小金猪吐出一枚金币攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">27</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">财神到 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">汪伦可以指定一名目标队友和自己额外获得金币。竞技场：每回合准备阶段可以释放；大乱斗：每间隔<span style="color: var(--highlight-color); font-weight: bold;">3</span>分钟可释放。每次获得金币数量随汪伦自身等级提升（竞技场中单次发放数额最多不超过<span style="color: var(--highlight-color); font-weight: bold;">10</span>金币）。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">一掷千金 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">8/7.5/7/6.5秒</span></div>
+        <div class="skill-desc">小金猪向前发射一个装满金币的元宝，元宝抵达终点或命中首个敌人时爆开造成<span style="color: var(--highlight-color); font-weight: bold;">34</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>法术攻击力)和<span style="color: var(--highlight-color); font-weight: bold;">20%</span>减速持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒，爆开的元宝会洒下金币，<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒内持续对范围内的所有敌人造成<span style="color: var(--highlight-color); font-weight: bold;">6</span>次<span style="color: var(--highlight-color); font-weight: bold;">9</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">6</span>+<span style="color: var(--highlight-color); font-weight: bold;">10%</span>法术攻击力)和<span style="color: var(--highlight-color); font-weight: bold;">30%</span>减速效果。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">金猪赐福 <span class="skill-type">主动/增益/控制</span> <span class="skill-cd">12/11/10/9秒</span></div>
+        <div class="skill-desc">小金猪为一名指定友方添加<span style="color: var(--highlight-color); font-weight: bold;">60</span>护盾(<span style="color: var(--highlight-color); font-weight: bold;">45</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>法术攻击力)并提升<span style="color: var(--highlight-color); font-weight: bold;">25%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。护盾结束或被击破<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒后会产生一次爆炸，对周围敌人造成<span style="color: var(--highlight-color); font-weight: bold;">80</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">60</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>法术攻击力)和<span style="color: var(--highlight-color); font-weight: bold;">60%</span>减速效果，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">财迷心窍 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">38秒</span></div>
+        <div class="skill-desc">小金猪在目标点召唤出一颗摇钱树，生长完全的摇钱树会掉落金币并发出一次金光，吸引范围内的敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">113</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">90</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>法术攻击力)和牵引效果，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>/<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">25</span>/<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-咸鱼蛋">
+        <div class="detail-header">
+          <img src="/img/xianyudan/image_866173352257636.png" alt="咸鱼蛋">
+          <h2>咸鱼蛋</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>435</td></tr><tr><td>物理攻击力</td><td>32</td></tr><tr><td>物理防御</td><td>32 | 24%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>24 | 19%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">咸鱼快刀 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">左右挥刀攻击敌方蛋仔，造成<span style="color: var(--highlight-color); font-weight: bold;">32</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">咸鱼刀意 <span class="skill-type">被动/伤害</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">咸鱼蛋施放技能后<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒内获得一次可累计的强化普攻，最多可累计三次，强化普攻造成<span style="color: var(--highlight-color); font-weight: bold;">38</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">120%</span>物理攻击力)，命中减少<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒一技能冷却时间，命中敌方蛋仔三次解锁大招。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">咸鱼单刀 <span class="skill-type">主动/位移</span> <span class="skill-cd">9.5/9/8.5/8秒</span></div>
+        <div class="skill-desc">咸鱼蛋化身咸鱼并将自己扔向目标点，飞行过程中无法选中，到达目标点或命中敌方蛋仔后变回咸鱼蛋，命中敌方蛋仔造成<span style="color: var(--highlight-color); font-weight: bold;">28</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">咸鱼双刀 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6/5.5/5/4.5秒</span></div>
+        <div class="skill-desc">咸鱼蛋向前方短距离突刺，对命中的敌方蛋仔造成<span style="color: var(--highlight-color); font-weight: bold;">29</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">16</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力)，自身获得<span style="color: var(--highlight-color); font-weight: bold;">12</span>治疗回复(<span style="color: var(--highlight-color); font-weight: bold;">4</span>+<span style="color: var(--highlight-color); font-weight: bold;">10%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">1%</span>自身最大生命值)，释放技能后可以在<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒内向指定方向使用双刀交叉再次发起攻击，命中对敌方蛋仔造成<span style="color: var(--highlight-color); font-weight: bold;">36</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)和<span style="color: var(--highlight-color); font-weight: bold;">50%</span>减速，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒，自身获得<span style="color: var(--highlight-color); font-weight: bold;">21</span>治疗回复(<span style="color: var(--highlight-color); font-weight: bold;">6</span>+<span style="color: var(--highlight-color); font-weight: bold;">20%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">2%</span>自身最大生命值)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">咸鱼三刀 <span class="skill-type">主动/伤害</span> <span class="skill-cd">20秒</span></div>
+        <div class="skill-desc">咸鱼蛋化身成为超大咸鱼施放三段技能，超大咸鱼状态下为霸体状态并免疫<span style="color: var(--highlight-color); font-weight: bold;">70%</span>受到的伤害，每段释放完成后可变回咸鱼蛋，期间可施放其他技能，<span style="color: var(--highlight-color); font-weight: bold;">10</span>秒内可再次施放下一段:
+第一段: 大咸鱼向左横劈造成<span style="color: var(--highlight-color); font-weight: bold;">108</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">70</span>+<span style="color: var(--highlight-color); font-weight: bold;">120%</span>物理攻击力)。
+第二段: 大咸鱼向右横劈造成<span style="color: var(--highlight-color); font-weight: bold;">108</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">70</span>+<span style="color: var(--highlight-color); font-weight: bold;">120%</span>物理攻击力)。
+第三段: 大咸鱼向下重劈造成<span style="color: var(--highlight-color); font-weight: bold;">145</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100</span>+<span style="color: var(--highlight-color); font-weight: bold;">140%</span>物理攻击力)与击飞。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-圆圆子">
+        <div class="detail-header">
+          <img src="/img/yuanyuanzi/image_198573303320091.png" alt="圆圆子">
+          <h2>圆圆子</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>455</td></tr><tr><td>物理攻击力</td><td>30</td></tr><tr><td>物理防御</td><td>33 | 25%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>100</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>30</td></tr><tr><td>法术防御</td><td>36 | 26%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">勺子 <span class="skill-type">普攻</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">挥击造成物理伤害,造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>物理伤害（<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力）</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">甜甜补给 <span class="skill-type">被动（恢复/成长）</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">技能命中掉落糯米块，提供治疗与体型成长,<span style="color: var(--highlight-color); font-weight: bold;">1</span>. 技能命中敌人掉落糯米块，拾取后回复<span style="color: var(--highlight-color); font-weight: bold;">20</span>生命值（<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">3%</span>目标最大生命值+<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">2%</span>目标最大生命值×目标当前等级）；<span style="color: var(--highlight-color); font-weight: bold;">2</span>. 每<span style="color: var(--highlight-color); font-weight: bold;">100</span>额外生命值增加<span style="color: var(--highlight-color); font-weight: bold;">1%</span>体型，每<span style="color: var(--highlight-color); font-weight: bold;">1%</span>体型增加<span style="color: var(--highlight-color); font-weight: bold;">1%</span>技能范围</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">糯糯敲击 <span class="skill-type">主动（伤害/减速）</span> <span class="skill-cd">8/7/6/5秒</span></div>
+        <div class="skill-desc">敲击肚子造成范围法术伤害与减速,对周围敌人造成<span style="color: var(--highlight-color); font-weight: bold;">47</span>法术伤害（<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>法术攻击力+<span style="color: var(--highlight-color); font-weight: bold;">4%</span>自身最大生命值），并施加<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒<span style="color: var(--highlight-color); font-weight: bold;">30%</span>减速</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">圆圆突进 <span class="skill-type">主动（位移/控制）</span> <span class="skill-cd">9/8/7/6秒</span></div>
+        <div class="skill-desc">朝指定方向突进，碰撞敌人造成伤害与眩晕,撞到敌人造成<span style="color: var(--highlight-color); font-weight: bold;">42</span>法术伤害（<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力），并眩晕敌人<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">弹弹汤圆 <span class="skill-type">主动（位移/伤害/控制）</span> <span class="skill-cd">30/28/26秒</span></div>
+        <div class="skill-desc">连续三次跳跃落地造成范围伤害，附带眩晕与减速,<span style="color: var(--highlight-color); font-weight: bold;">1</span>. 可连续跳跃三次，每次落地对范围内敌人造成<span style="color: var(--highlight-color); font-weight: bold;">47</span>法术伤害（<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>法术攻击力+<span style="color: var(--highlight-color); font-weight: bold;">5%</span>自身最大生命值）；<span style="color: var(--highlight-color); font-weight: bold;">2</span>. 首次命中造成<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒眩晕，后续命中施加<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒<span style="color: var(--highlight-color); font-weight: bold;">30%</span>减速；<span style="color: var(--highlight-color); font-weight: bold;">3</span>. 技能释放过程中可释放其他技能</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-大祭司木西恩">
+        <div class="detail-header">
+          <img src="/img/dajisimuxien/image_073470429543874.png" alt="大祭司木西恩">
+          <h2>大祭司木西恩</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>450</td></tr><tr><td>物理攻击力</td><td>32</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>100</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>30</td></tr><tr><td>法术防御</td><td>35 | 26%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">仪式弯刀 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">木西恩挥动弯刀攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">32</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">亡者国度 <span class="skill-type">被动/恢复</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">木西恩损失生命值的<span style="color: var(--highlight-color); font-weight: bold;">20%</span>会被存储起来，每秒恢复总存储生命值的<span style="color: var(--highlight-color); font-weight: bold;">20%</span>，该效果视为治疗。附近<span style="color: var(--highlight-color); font-weight: bold;">10</span>米内有角色阵亡时，会立即恢复所有存储的生命值。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">绷带发射 <span class="skill-type">主动/控制/位移</span> <span class="skill-cd">11/10/9/8秒</span></div>
+        <div class="skill-desc">木西恩朝前方发射绷带，对首个命中的敌方蛋仔造成<span style="color: var(--highlight-color); font-weight: bold;">44</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>法术攻击力)并眩晕目标，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒。同时将自身牵引向目标，牵引过程中木西，牵引过程中木西恩处于无法选中状态且能够穿越障碍。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">冥沙风暴 <span class="skill-type">主动/伤害</span> <span class="skill-cd">5.5/5/4.5/4秒</span></div>
+        <div class="skill-desc">木西恩摇动仪式弯刀，在周围产生风暴，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">38</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">32</span>+<span style="color: var(--highlight-color); font-weight: bold;">20%</span>法术攻击力)。<span style="color: var(--highlight-color); font-weight: bold;">8</span>秒内连续命中相同目标会额外造成<span style="color: var(--highlight-color); font-weight: bold;">18</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">16</span>+<span style="color: var(--highlight-color); font-weight: bold;">8%</span>法术攻击力)，该效果可叠加最多<span style="color: var(--highlight-color); font-weight: bold;">5</span>层。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">亡者新生 <span class="skill-type">主动/伤害/增益</span> <span class="skill-cd">22秒</span></div>
+        <div class="skill-desc">木西恩汲取亡者国度的力量强化自身，持续<span style="color: var(--highlight-color); font-weight: bold;">9</span>/<span style="color: var(--highlight-color); font-weight: bold;">12</span>/<span style="color: var(--highlight-color); font-weight: bold;">15</span>秒，最大生命值提高<span style="color: var(--highlight-color); font-weight: bold;">200</span>/<span style="color: var(--highlight-color); font-weight: bold;">400</span>/<span style="color: var(--highlight-color); font-weight: bold;">600</span>点，每秒对周围敌人造成<span style="color: var(--highlight-color); font-weight: bold;">19</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">15%</span>法术攻击力)并施加<span style="color: var(--highlight-color); font-weight: bold;">1</span>层虚弱诅咒，每层诅咒使目标造成的伤害降低<span style="color: var(--highlight-color); font-weight: bold;">6%</span>，可叠加最多<span style="color: var(--highlight-color); font-weight: bold;">4</span>层。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-失心熊">
+        <div class="detail-header">
+          <img src="/img/shixinxiong/image_480867714112531.png" alt="失心熊">
+          <h2>失心熊</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>460</td></tr><tr><td>物理攻击力</td><td>30</td></tr><tr><td>物理防御</td><td>35 | 26%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>100</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>30</td></tr><tr><td>法术防御</td><td>30 | 23%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">拐杖糖 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">失心熊挥舞破碎拐杖糖攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">自我治愈 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">失心熊每参与击败一个敌人，永久提升自身<span style="color: var(--highlight-color); font-weight: bold;">15</span>最大生命值。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">失心钩索 <span class="skill-type">主动/控制</span> <span class="skill-cd">11秒</span></div>
+        <div class="skill-desc">失心熊朝前方投出拐杖糖钩子，对首个命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">61</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">120%</span>法术攻击力)，并将其牵引至失心熊身边。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">失心哭泣 <span class="skill-type">主动/伤害</span> <span class="skill-cd">5秒</span></div>
+        <div class="skill-desc">失心熊开始哭泣，持续<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒，每<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">7</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">5</span>+<span style="color: var(--highlight-color); font-weight: bold;">7%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">索要拥抱 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">20秒</span></div>
+        <div class="skill-desc">失心熊向锁定的敌人飞扑过去并紧紧地拥抱，对目标造成压制效果，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。期间高频抓挠攻击敌人，每次造成<span style="color: var(--highlight-color); font-weight: bold;">6</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">1</span>+<span style="color: var(--highlight-color); font-weight: bold;">1%</span>自身最大生命值)。压制期间，双方无法行动。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-宁红夜">
+        <div class="detail-header">
+          <img src="/img/ninghongye/image_683754536190010.png" alt="宁红夜">
+          <h2>宁红夜</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>420</td></tr><tr><td>物理攻击力</td><td>35</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>20 | 17%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">剑击 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">宁红夜挥动长剑冷香，攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">35</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">剑鸣 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">宁红夜使用技能后，强化下次普攻，造成<span style="color: var(--highlight-color); font-weight: bold;">30%</span>额外伤害。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">烛神剑术 <span class="skill-type">主动/伤害/位移</span> <span class="skill-cd">12/11/10/9秒</span></div>
+        <div class="skill-desc">烛神剑术分为三段，释放前一段后，<span style="color: var(--highlight-color); font-weight: bold;">4</span>秒内可释放下一段：第一段：正手出剑前刺位移，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">44</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>物理攻击力)；第二段：反手出剑前刺位移，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">44</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>物理攻击力)；第三段：突进位移转身上挑，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">44</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>物理攻击力)，击飞并眩晕敌人，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">昆仑决 <span class="skill-type">主动/伤害</span> <span class="skill-cd">9秒</span></div>
+        <div class="skill-desc">宁红夜向前方扇形区域释放气功，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">38</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)，减速<span style="color: var(--highlight-color); font-weight: bold;">30%</span>，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">赤练无明 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">28秒</span></div>
+        <div class="skill-desc">宁红夜召唤「阴神之眼」注视范围内的敌人，持续<span style="color: var(--highlight-color); font-weight: bold;">4</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。期间宁红夜获得<span style="color: var(--highlight-color); font-weight: bold;">6%</span>/<span style="color: var(--highlight-color); font-weight: bold;">12%</span>/<span style="color: var(--highlight-color); font-weight: bold;">18%</span>减伤效果，「阴神之眼」每<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒对被注视的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">17</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">10</span>+<span style="color: var(--highlight-color); font-weight: bold;">20%</span>物理攻击力)，结束时对被注视敌人造成<span style="color: var(--highlight-color); font-weight: bold;">68</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>物理攻击力)并眩晕，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。墙体障碍和草丛会阻挡「阴神之眼」的视线。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-小太阳葵葵">
+        <div class="detail-header">
+          <img src="/img/xiaotaiyangkuikui/image_028031197631780.png" alt="小太阳葵葵">
+          <h2>小太阳葵葵</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>390</td></tr><tr><td>物理攻击力</td><td>30</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>110</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>30</td></tr><tr><td>法术防御</td><td>20 | 17%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">闪光子弹 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">小太阳葵葵使用双手炮发射闪光子弹攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">无限光源 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">小太阳葵葵的第<span style="color: var(--highlight-color); font-weight: bold;">5</span>次普攻会获得强化，额外造成<span style="color: var(--highlight-color); font-weight: bold;">12</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力+<span style="color: var(--highlight-color); font-weight: bold;">4%</span>目标最大生命值)。小太阳葵葵被击败<span style="color: var(--highlight-color); font-weight: bold;">4</span>秒内依旧可以移动，期间身体会逐渐高亮，随后产生爆炸对周围敌人造成<span style="color: var(--highlight-color); font-weight: bold;">141</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">100</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>法术攻击力+<span style="color: var(--highlight-color); font-weight: bold;">20</span>*自身当前等级)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">暖阳光炮 <span class="skill-type">主动/增益</span> <span class="skill-cd">15秒</span></div>
+        <div class="skill-desc">小太阳葵葵进入强化状态，持续<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。期间提升普攻距离，普攻会能发射出暖阳光炮造成<span style="color: var(--highlight-color); font-weight: bold;">41</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">10</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">25%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">跃升云端 <span class="skill-type">主动/位移</span> <span class="skill-cd">16/15/14/13秒</span></div>
+        <div class="skill-desc">小太阳葵葵一跃而起，腾空一段时间后缓慢降落地面，腾空期间可以躲避地面攻击。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">炽焰光束 <span class="skill-type">主动/伤害</span> <span class="skill-cd">8/7/6秒</span></div>
+        <div class="skill-desc">小太阳葵葵通过葵葵小啾啾向指定区域发射炽焰光束，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">49</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">75%</span>法术攻击力)，对生命值低于<span style="color: var(--highlight-color); font-weight: bold;">30%</span>的敌人额外造成<span style="color: var(--highlight-color); font-weight: bold;">15</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">5</span>+<span style="color: var(--highlight-color); font-weight: bold;">12%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">22%</span>法术攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-小象哆哆">
+        <div class="detail-header">
+          <img src="/img/xiaoxiangduoduo/image_273105482857449.png" alt="小象哆哆">
+          <h2>小象哆哆</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>460</td></tr><tr><td>物理攻击力</td><td>30</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>100</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>28</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">泡泡 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">小象哆哆喷出小泡泡攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">补充水弹 <span class="skill-type">被动/控制</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">小象哆哆每隔<span style="color: var(--highlight-color); font-weight: bold;">15</span>秒，下次普攻会向锁定的目标射出一个「浮空泡泡」。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">浮空泡泡 <span class="skill-type">主动/控制</span> <span class="skill-cd">13秒</span></div>
+        <div class="skill-desc">小象哆哆射出<span style="color: var(--highlight-color); font-weight: bold;">6</span>个泡泡，每个泡泡对首个命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒「浮空」和<span style="color: var(--highlight-color); font-weight: bold;">41</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力)。「浮空」期间的敌人会失去大部分质量而变轻，受击时泡泡破裂造成<span style="color: var(--highlight-color); font-weight: bold;">67</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">50</span>+<span style="color: var(--highlight-color); font-weight: bold;">60%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">悲伤马戏 <span class="skill-type">主动/伤害</span> <span class="skill-cd">4秒</span></div>
+        <div class="skill-desc">小象哆哆朝前方轻轻跳起，随后坐向地面，落地时对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">60</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">暴风吸入 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">20秒</span></div>
+        <div class="skill-desc">小象哆哆使用泡泡枪吸入前方空气，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。高频攻击和牵引范围内的敌人，每次造成<span style="color: var(--highlight-color); font-weight: bold;">11</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">8</span>+<span style="color: var(--highlight-color); font-weight: bold;">12%</span>法术攻击力)并减少目标<span style="color: var(--highlight-color); font-weight: bold;">50%</span>移动速度。该技能会重置敌人的「浮空」状态且使泡泡不可被击破。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-极光女神典伊">
+        <div class="detail-header">
+          <img src="/img/jiguangnvshendianyi/image_311566509615498.png" alt="极光女神典伊">
+          <h2>极光女神典伊</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>380</td></tr><tr><td>物理攻击力</td><td>27</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>24</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">冰箭 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">典伊挥舞法杖，发射冰箭攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">27</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">极光护盾 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">典伊每隔<span style="color: var(--highlight-color); font-weight: bold;">12</span>秒（受冷却缩减影响），生成一个可吸收<span style="color: var(--highlight-color); font-weight: bold;">10%</span>自身最大生命值伤害的极光护盾，护盾被打破时对周围敌人造成<span style="color: var(--highlight-color); font-weight: bold;">35</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">20%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">极光新星 <span class="skill-type">主动/伤害</span> <span class="skill-cd">5秒</span></div>
+        <div class="skill-desc">典伊在目标地点释放极光新星，对范围内敌人造成<span style="color: var(--highlight-color); font-weight: bold;">33</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">75%</span>法术攻击力)，减速<span style="color: var(--highlight-color); font-weight: bold;">30%</span>，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">极地风雪 <span class="skill-type">主动/伤害</span> <span class="skill-cd">13秒</span></div>
+        <div class="skill-desc">典伊在目标地点制造一场持续<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒的暴风雪，范围内敌人被减速<span style="color: var(--highlight-color); font-weight: bold;">15%</span>，被暴风雪击中的敌人会受到<span style="color: var(--highlight-color); font-weight: bold;">28</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">35%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">极光爆发 <span class="skill-type">主动/控制</span> <span class="skill-cd">16秒</span></div>
+        <div class="skill-desc">典伊创造一道向前延伸的极光，随后极光爆发，冰冻范围内敌人<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒，并造成<span style="color: var(--highlight-color); font-weight: bold;">76</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">150%</span>法术攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-淘气丸子">
+        <div class="detail-header">
+          <img src="/img/taoqiwanzi/image_518821198918526.png" alt="淘气丸子">
+          <h2>淘气丸子</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>495</td></tr><tr><td>物理攻击力</td><td>43</td></tr><tr><td>物理防御</td><td>38 | 28%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>107</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>24</td></tr><tr><td>法术防御</td><td>24 | 19%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">手提包 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">淘气丸子左右挥舞手提包攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">43</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">前期无敌 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">淘气丸子的初始等级+<span style="color: var(--highlight-color); font-weight: bold;">1</span>。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">快迟到了 <span class="skill-type">主动/位移</span> <span class="skill-cd">9.5/9/8.5/8秒</span></div>
+        <div class="skill-desc">淘气丸子向前方淘气冲刺，撞到敌人时会击退目标并造成<span style="color: var(--highlight-color); font-weight: bold;">43</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">21</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">拍拍拍 <span class="skill-type">主动/伤害</span> <span class="skill-cd">9.5/9/8.5/8秒</span></div>
+        <div class="skill-desc">淘气丸子进入极速状态，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。期间大幅加快普攻动作，大幅缩短普攻间隔，每次普攻造成<span style="color: var(--highlight-color); font-weight: bold;">24</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">55%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">淘气一击 <span class="skill-type">主动/位移/伤害</span> <span class="skill-cd">15秒</span></div>
+        <div class="skill-desc">淘气丸子一跃而起跳向锁定的敌人方向，落地时发起淘气一击，短暂拍扁并眩晕范围内的敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">123</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">80</span>+<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-游游白柳仙">
+        <div class="detail-header">
+          <img src="/img/youyoubailiuxian/image_154673333378469.png" alt="游游白柳仙">
+          <h2>游游白柳仙</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>400</td></tr><tr><td>物理攻击力</td><td>26</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>109</td></tr><tr><td>法术攻击力</td><td>28</td></tr><tr><td>法术防御</td><td>22 | 18%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">落尘 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">白柳仙向目标发射飞晶，造成<span style="color: var(--highlight-color); font-weight: bold;">29</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">落尘 <span class="skill-type">被动/伤害</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">白柳仙的每次造成技能伤害都会对目标施加「幻尘」，每秒造成<span style="color: var(--highlight-color); font-weight: bold;">2</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">8%</span>法术攻击力)，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒，独立计时，最多<span style="color: var(--highlight-color); font-weight: bold;">3</span>层。每层使目标受到来自白柳仙的法术伤害提高<span style="color: var(--highlight-color); font-weight: bold;">5%</span>。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">凝珠 <span class="skill-type">主动/伤害</span> <span class="skill-cd">8秒</span></div>
+        <div class="skill-desc">向瞄准方向发射宝珠，命中敌人或到达最大距离后宝珠会减速，每<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒对半径<span style="color: var(--highlight-color); font-weight: bold;">4</span>米范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">10</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">5</span>+<span style="color: var(--highlight-color); font-weight: bold;">16%</span>法术攻击力)。宝珠存在<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">吐玉 <span class="skill-type">主动/控制/位移</span> <span class="skill-cd">13/12/11/10秒</span></div>
+        <div class="skill-desc">向瞄准方向吐出晶玉同时自身后退，晶玉会推开触碰的敌人并造成<span style="color: var(--highlight-color); font-weight: bold;">26</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">35%</span>法术攻击力)，晶玉到达终点会爆炸并对半径<span style="color: var(--highlight-color); font-weight: bold;">4</span>米范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">37</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">55%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">缚灵 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">25秒</span></div>
+        <div class="skill-desc">白柳仙召唤宝珠，丝带缠绕范围内的敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">29</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>法术攻击力)。敌人离开范围挣脱缠绕时会被眩晕<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒并受到<span style="color: var(--highlight-color); font-weight: bold;">50</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">65%</span>法术攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-狸猫大力">
+        <div class="detail-header">
+          <img src="/img/limaodali/image_301421282543552.png" alt="狸猫大力">
+          <h2>狸猫大力</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>460</td></tr><tr><td>物理攻击力</td><td>34</td></tr><tr><td>物理防御</td><td>40 | 29%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>100</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">挥击 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">狸猫大力挥动路障攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">34</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">安全帽 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">狸猫大力<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒内未受到伤害，会戴上安全帽，获得<span style="color: var(--highlight-color); font-weight: bold;">12%</span>自身最大生命值的护盾。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">此路不通 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">6秒</span></div>
+        <div class="skill-desc">狸猫大力双手用力将路障向前推出，击退范围内的敌人，并造成<span style="color: var(--highlight-color); font-weight: bold;">82</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">45</span>+<span style="color: var(--highlight-color); font-weight: bold;">110%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">紧急出击 <span class="skill-type">主动/位移/伤害/控制</span> <span class="skill-cd">12/11/10/9秒</span></div>
+        <div class="skill-desc">狸猫大力高高跃起，随后用力挥动路障拍向地面，眩晕范围内的敌人并造成<span style="color: var(--highlight-color); font-weight: bold;">57</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">路障天降 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">21秒</span></div>
+        <div class="skill-desc">狸猫大力吹响口哨，在目标地点召唤一个持续<span style="color: var(--highlight-color); font-weight: bold;">8</span>秒的路障，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">70</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">50</span>+<span style="color: var(--highlight-color); font-weight: bold;">60%</span>物理攻击力)，触碰到路障的敌人会被弹开并受到<span style="color: var(--highlight-color); font-weight: bold;">72</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">55</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-玫瑰骑士">
+        <div class="detail-header">
+          <img src="/img/meiguiqishi/image_145570407477300.png" alt="玫瑰骑士">
+          <h2>玫瑰骑士</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>430</td></tr><tr><td>物理攻击力</td><td>34</td></tr><tr><td>物理防御</td><td>35 | 26%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">玫瑰利剑 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">玫瑰骑士使用利剑攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">34</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">玫瑰印记 <span class="skill-type">被动/伤害</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">玫瑰骑士的所有技能视作普攻。使用技能和普攻命中敌人时，对目标施加一层「玫瑰印记」，攻击三层印记的敌人将消耗所有印记，造成<span style="color: var(--highlight-color); font-weight: bold;">46</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">90%</span>物理攻击力)并提升自身<span style="color: var(--highlight-color); font-weight: bold;">20%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">花剑突刺 <span class="skill-type">主动/位移</span> <span class="skill-cd">10/9/8/7秒</span></div>
+        <div class="skill-desc">玫瑰骑士向前突刺位移，抵达终点时向范围内最近的敌人方向出剑攻击，造成<span style="color: var(--highlight-color); font-weight: bold;">36</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">22</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力)。普攻命中蛋仔会返还该技能<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒冷却。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">玫瑰连刺 <span class="skill-type">主动/伤害</span> <span class="skill-cd">8秒</span></div>
+        <div class="skill-desc">玫瑰骑士向前戳刺，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">42</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)并减少目标<span style="color: var(--highlight-color); font-weight: bold;">40%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。命中敌方蛋仔后<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒内，强化接下来两次普攻，提升普攻距离、缩短普攻间隔，造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">10</span>+<span style="color: var(--highlight-color); font-weight: bold;">60%</span>物理攻击力)且附带<span style="color: var(--highlight-color); font-weight: bold;">30%</span>物理吸血。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">凋零剑法 <span class="skill-type">主动/伤害</span> <span class="skill-cd">30秒</span></div>
+        <div class="skill-desc">玫瑰骑士向锁定的敌人发起一次突刺，随后连续突刺<span style="color: var(--highlight-color); font-weight: bold;">4</span>次自身<span style="color: var(--highlight-color); font-weight: bold;">8</span>米内的随机敌方蛋仔，期间玫瑰骑士处于无敌状态且不可被选中，每次突刺造成<span style="color: var(--highlight-color); font-weight: bold;">37</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">27</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>物理攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-瑶光星星马">
+        <div class="detail-header">
+          <img src="/img/yaoguangxingxingma/image_986710836510782.png" alt="瑶光星星马">
+          <h2>瑶光星星马</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>400</td></tr><tr><td>物理攻击力</td><td>35</td></tr><tr><td>物理防御</td><td>32 | 24%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>110</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>26</td></tr><tr><td>法术防御</td><td>22 | 18%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">翅膀 <span class="skill-type">普攻</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">发射羽毛造成物理伤害,造成<span style="color: var(--highlight-color); font-weight: bold;">35</span>物理伤害（<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力）</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">神圣进化 <span class="skill-type">被动（成长增益）</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">随等级提升普攻能力与特效,<span style="color: var(--highlight-color); font-weight: bold;">1</span>. 等级<span style="color: var(--highlight-color); font-weight: bold;">1</span>：普攻叠加「升华」，每层提供<span style="color: var(--highlight-color); font-weight: bold;">6%</span>攻速+<span style="color: var(--highlight-color); font-weight: bold;">3%</span>移速，最多<span style="color: var(--highlight-color); font-weight: bold;">3</span>层，持续<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒；<span style="color: var(--highlight-color); font-weight: bold;">2</span>. 等级<span style="color: var(--highlight-color); font-weight: bold;">6</span>：普攻距离提升至<span style="color: var(--highlight-color); font-weight: bold;">12</span>米；<span style="color: var(--highlight-color); font-weight: bold;">3</span>. 等级<span style="color: var(--highlight-color); font-weight: bold;">10</span>：「升华」增益提升为每层<span style="color: var(--highlight-color); font-weight: bold;">10%</span>攻速+<span style="color: var(--highlight-color); font-weight: bold;">6%</span>移速，满层后每攻击<span style="color: var(--highlight-color); font-weight: bold;">2</span>次，下次普攻替换为圣光，额外造成<span style="color: var(--highlight-color); font-weight: bold;">21</span>法术伤害（<span style="color: var(--highlight-color); font-weight: bold;">25%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力+<span style="color: var(--highlight-color); font-weight: bold;">2</span>*自身当前等级）；<span style="color: var(--highlight-color); font-weight: bold;">4</span>. 等级<span style="color: var(--highlight-color); font-weight: bold;">14</span>：普攻距离提升至<span style="color: var(--highlight-color); font-weight: bold;">15</span>米，「升华」满层额外获得<span style="color: var(--highlight-color); font-weight: bold;">30%</span>攻速+<span style="color: var(--highlight-color); font-weight: bold;">10%</span>移速，圣光无需满层触发，且可弹射最多<span style="color: var(--highlight-color); font-weight: bold;">3</span>个敌人</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">破空星羽 <span class="skill-type">主动（伤害/减速）</span> <span class="skill-cd">10/9/8/7秒</span></div>
+        <div class="skill-desc">发射羽毛造成范围法术伤害并减速,对命中敌人造成<span style="color: var(--highlight-color); font-weight: bold;">51</span>法术伤害（<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>法术攻击力），并施加<span style="color: var(--highlight-color); font-weight: bold;">25%</span>减速，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒；交叉区域第二次命中仅造成<span style="color: var(--highlight-color); font-weight: bold;">50%</span>伤害</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">圣光疾行 <span class="skill-type">主动（增益）</span> <span class="skill-cd">9/8/7/6秒</span></div>
+        <div class="skill-desc">为自身与友军提供移速和攻速加成,自身获得<span style="color: var(--highlight-color); font-weight: bold;">30%</span>移速+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>攻速加成，附近友军获得<span style="color: var(--highlight-color); font-weight: bold;">25%</span>移速加成，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">天马降临 <span class="skill-type">主动（伤害/治疗）</span> <span class="skill-cd">25秒</span></div>
+        <div class="skill-desc">俯冲造成伤害并治疗友军,对经过的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">82</span>法术伤害（<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">60%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>法术攻击力），对经过的友军造成<span style="color: var(--highlight-color); font-weight: bold;">51</span>治疗回复（<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">120%</span>法术攻击力）</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-画中少女格蕾">
+        <div class="detail-header">
+          <img src="/img/huazhongshaonvgelei/image_302836785587315.png" alt="画中少女格蕾">
+          <h2>画中少女格蕾</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>400</td></tr><tr><td>物理攻击力</td><td>25</td></tr><tr><td>物理防御</td><td>25 | 20%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>30</td></tr><tr><td>法术防御</td><td>20 | 17%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">珍珠 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">格蕾发射珍珠攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">25</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">珍珠印记 <span class="skill-type">被动/伤害</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">格蕾的技能会为敌人叠加珍珠印记，持续<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒，叠满<span style="color: var(--highlight-color); font-weight: bold;">4</span>层时印记触发，造成<span style="color: var(--highlight-color); font-weight: bold;">42</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">140%</span>法术攻击力)并减少敌人<span style="color: var(--highlight-color); font-weight: bold;">50%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">珍珠戏法 <span class="skill-type">主动/伤害</span> <span class="skill-cd">4秒</span></div>
+        <div class="skill-desc">格蕾朝目标方向发射令人眼花缭乱的珍珠戏法，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">64</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">45</span>+<span style="color: var(--highlight-color); font-weight: bold;">65%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">画中幽灵 <span class="skill-type">主动/位移</span> <span class="skill-cd">12/11.5/11/10.5秒</span></div>
+        <div class="skill-desc">格蕾在目标地点创建一个画中幽灵，画中幽灵持续<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒，存在期间会和格蕾一起释放技能，再次释放技能会让格蕾与画中幽灵交换位置。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">珍珠震荡 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">25秒</span></div>
+        <div class="skill-desc">格蕾凝聚珍珠之中的纯净力量，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">64</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">130%</span>法术攻击力)并眩晕目标，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-葫芦娃七娃">
+        <div class="detail-header">
+          <img src="/img/huluwaqiwa/image_134522556298159.png" alt="葫芦娃七娃">
+          <h2>葫芦娃七娃</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>445</td></tr><tr><td>物理攻击力</td><td>28</td></tr><tr><td>物理防御</td><td>28 | 22%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>95</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>26</td></tr><tr><td>法术防御</td><td>24 | 19%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">葫芦 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">七娃使用宝葫芦发射能量弹攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">28</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">葫芦护体 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">七娃使用技能命中敌方蛋仔时，会驱使宝葫芦保护自己和附近的队友，对<span style="color: var(--highlight-color); font-weight: bold;">10</span>米内己方蛋仔添加<span style="color: var(--highlight-color); font-weight: bold;">54</span>固定伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">55%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">葫芦灵流 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6/5.5/5/4.5秒</span></div>
+        <div class="skill-desc">七娃使用宝葫芦倾泻葫芦灵流，灵流从天而降砸向地面，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">63</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">45</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>法术攻击力)并降低<span style="color: var(--highlight-color); font-weight: bold;">30%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">离心咒 <span class="skill-type">主动/控制</span> <span class="skill-cd">15/14/13/12秒</span></div>
+        <div class="skill-desc">七娃向指定目标释放离心咒，造成<span style="color: var(--highlight-color); font-weight: bold;">29</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">35%</span>法术攻击力)，期间自身获得<span style="color: var(--highlight-color); font-weight: bold;">20%</span>移速提升，若目标<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒内未能逃出离心范围，则造成<span style="color: var(--highlight-color); font-weight: bold;">45</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力)，并令其进入<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒离心状态。处于离心状态的敌人会朝最近的友军移动，并使用普攻攻击友军。离心状态普攻伤害降低<span style="color: var(--highlight-color); font-weight: bold;">50%</span>。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">气吞乾坤 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">35秒</span></div>
+        <div class="skill-desc">七娃将宝葫芦扔向指定位置，短暂施法后会将范围内的所有敌人吸入宝葫芦内，持续<span style="color: var(--highlight-color); font-weight: bold;">4</span>秒。敌人需要在<span style="color: var(--highlight-color); font-weight: bold;">4</span>秒内逃离宝葫芦，逃离失败的敌人会被宝葫芦喷出眩晕<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒并受到<span style="color: var(--highlight-color); font-weight: bold;">108</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">90</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>法术攻击力)，成功逃离的敌人不会眩晕，并只受到<span style="color: var(--highlight-color); font-weight: bold;">50%</span>伤害。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-蛋小粉">
+        <div class="detail-header">
+          <img src="/img/danxiaofen/image_604494773641606.png" alt="蛋小粉">
+          <h2>蛋小粉</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>400</td></tr><tr><td>物理攻击力</td><td>40</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>110</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>18 | 15%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">射箭 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小粉拉弓射箭攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">40</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">快速拉弓 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小粉快速拉弓，每次普攻提升<span style="color: var(--highlight-color); font-weight: bold;">5</span>攻击速度，最多可叠加<span style="color: var(--highlight-color); font-weight: bold;">8</span>层，持续<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">标记箭 <span class="skill-type">主动/伤害/反隐</span> <span class="skill-cd">10秒</span></div>
+        <div class="skill-desc">蛋小粉对锁定的敌人发射标记箭，命中时标记并反隐敌人<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒，造成<span style="color: var(--highlight-color); font-weight: bold;">52</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">55%</span>物理攻击力)。蛋小粉普攻处于标记的敌人会提升<span style="color: var(--highlight-color); font-weight: bold;">20%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒。反隐效果：被反隐的敌人会处于显隐状态，期间进入草丛或使用隐身技能，依旧会暴露视野，可被敌人看见。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">爆炸箭 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6秒</span></div>
+        <div class="skill-desc">蛋小粉按键蓄力，松开时向前发射爆炸箭。爆炸箭发生碰撞时会爆炸，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">70</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)；若蓄力时间超过<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒，伤害提升至<span style="color: var(--highlight-color); font-weight: bold;">90</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">150%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">飓风之力 <span class="skill-type">主动/增益</span> <span class="skill-cd">28秒</span></div>
+        <div class="skill-desc">蛋小粉获得风的力量，进入急速射击状态，期间提升<span style="color: var(--highlight-color); font-weight: bold;">200</span>攻击速度。绝招等级<span style="color: var(--highlight-color); font-weight: bold;">1</span>：极速射击期间，普攻造成<span style="color: var(--highlight-color); font-weight: bold;">28</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">8</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)；绝招等级<span style="color: var(--highlight-color); font-weight: bold;">2</span>：极速射击期间，普攻造成<span style="color: var(--highlight-color); font-weight: bold;">34</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">8</span>+<span style="color: var(--highlight-color); font-weight: bold;">65%</span>物理攻击力)；绝招等级<span style="color: var(--highlight-color); font-weight: bold;">3</span>：极速射击期间，普攻造成<span style="color: var(--highlight-color); font-weight: bold;">40</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">8</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>物理攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-蛋小红">
+        <div class="detail-header">
+          <img src="/img/danxiaohong/image_030370878296020.png" alt="蛋小红">
+          <h2>蛋小红</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>450</td></tr><tr><td>物理攻击力</td><td>38</td></tr><tr><td>物理防御</td><td>35 | 26%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">左右挥砍 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小红左右挥砍光能长刀攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">38</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">充能长刃 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小红移动时会积攒运动值，攒满<span style="color: var(--highlight-color); font-weight: bold;">100</span>运动值时会充能长刃，下一次普攻获得强化，会朝锁定的敌人方向位移劈砍，造成<span style="color: var(--highlight-color); font-weight: bold;">44</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">115%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">拔刀斩 <span class="skill-type">主动/伤害</span> <span class="skill-cd">11/10/9/8秒</span></div>
+        <div class="skill-desc">蛋小红拔刀向前位移，对路径上的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">35</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">10</span>+<span style="color: var(--highlight-color); font-weight: bold;">65%</span>物理攻击力)。释放该技能会获得<span style="color: var(--highlight-color); font-weight: bold;">50</span>运动值，并提升<span style="color: var(--highlight-color); font-weight: bold;">30%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">破刀式 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">2.8秒</span></div>
+        <div class="skill-desc">破刀式分为三段，命中敌人会获得<span style="color: var(--highlight-color); font-weight: bold;">125%</span>物理攻击的护盾并可在<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒内释放下一段:
+第一段: 前刺，对敌人造成<span style="color: var(--highlight-color); font-weight: bold;">47</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">85%</span>物理攻击力)
+第二段: 上挑，对敌人造成<span style="color: var(--highlight-color); font-weight: bold;">49</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">90%</span>物理攻击力)，击飞并眩晕敌人，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒
+第三段: 横劈，对敌人造成<span style="color: var(--highlight-color); font-weight: bold;">73</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">125%</span>物理攻击力)并降低<span style="color: var(--highlight-color); font-weight: bold;">30%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">超燃登场 <span class="skill-type">主动/伤害</span> <span class="skill-cd">35秒</span></div>
+        <div class="skill-desc">蛋小红获得霸体效果且免疫伤害，高高跃起后扔出长刀，对范围中心<span style="color: var(--highlight-color); font-weight: bold;">5</span>米内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">26</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>物理攻击力)。<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒后自身砸向目标区域，击飞范围内的敌人并眩晕<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒，造成<span style="color: var(--highlight-color); font-weight: bold;">113</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">60</span>+<span style="color: var(--highlight-color); font-weight: bold;">140%</span>物理攻击力)。释放后获得<span style="color: var(--highlight-color); font-weight: bold;">100</span>运动值，技能期间霸体且免疫伤害。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-蛋小绿">
+        <div class="detail-header">
+          <img src="/img/danxiaolv/image_832063919296932.png" alt="蛋小绿">
+          <h2>蛋小绿</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>420</td></tr><tr><td>物理攻击力</td><td>28</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>30</td></tr><tr><td>法术防御</td><td>22 | 18%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">仙女棒 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小绿使用仙女棒扔出爱心飞弹攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">28</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">贴心小绿 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">被蛋小绿治疗后的队友会获得<span style="color: var(--highlight-color); font-weight: bold;">20%</span>移动速度加成，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">休息一下 <span class="skill-type">主动/附身/治疗/增益</span> <span class="skill-cd">4秒</span></div>
+        <div class="skill-desc">蛋小绿进入不可被选中状态并附身队友，被附身的队友获得<span style="color: var(--highlight-color); font-weight: bold;">46</span>治疗回复(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>法术攻击力)并提升<span style="color: var(--highlight-color); font-weight: bold;">10</span>/<span style="color: var(--highlight-color); font-weight: bold;">20</span>/<span style="color: var(--highlight-color); font-weight: bold;">30</span>/<span style="color: var(--highlight-color); font-weight: bold;">40</span>的物理和法术攻击力。附身期间，蛋小绿会始终跟随被附身的队友移动而无法自主移动，但可以正常释放技能。再次释放技能或队友被击败时，蛋小绿会脱离附身状态，自身获得<span style="color: var(--highlight-color); font-weight: bold;">46</span>治疗回复(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">爱心发射 <span class="skill-type">主动/伤害/治疗</span> <span class="skill-cd">4秒</span></div>
+        <div class="skill-desc">蛋小绿向前方发射爱心，对首个命中敌人造成<span style="color: var(--highlight-color); font-weight: bold;">60</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">45</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>法术攻击力)，同时产生一个爱心血包，友方拾取血包会获得<span style="color: var(--highlight-color); font-weight: bold;">54</span>治疗回复(<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">65%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">变形术 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">21秒</span></div>
+        <div class="skill-desc">蛋小绿向前方发射变形术，抵达终点或发生碰撞时会爆炸，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">78</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">55</span>+<span style="color: var(--highlight-color); font-weight: bold;">75%</span>法术攻击力)与变形效果，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-蛋小蓝">
+        <div class="detail-header">
+          <img src="/img/danxiaolan/image_680291658632175.png" alt="蛋小蓝">
+          <h2>蛋小蓝</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>380</td></tr><tr><td>物理攻击力</td><td>27</td></tr><tr><td>物理防御</td><td>25 | 20%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>30</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>9%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">智能平板 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小蓝使用平板扔出数码魔方攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">27</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">洞察 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小蓝聪慧过人，能够识破敌人的弱点，初始获得<span style="color: var(--highlight-color); font-weight: bold;">10%</span>法术穿透，每升一级额外获得<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5%</span>法术穿透。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">引力炸弹 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">8秒</span></div>
+        <div class="skill-desc">蛋小蓝向前发射一颗引力炸弹，再次释放技能会引爆炸弹，将范围内的敌人朝炸弹中心方向吸引并造成<span style="color: var(--highlight-color); font-weight: bold;">40</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">高能激光 <span class="skill-type">主动/伤害</span> <span class="skill-cd">8.5/8/7.5/7秒</span></div>
+        <div class="skill-desc">蛋小蓝向前方发射高能激光，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">68</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">160%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">头脑风暴 <span class="skill-type">主动/伤害</span> <span class="skill-cd">15秒</span></div>
+        <div class="skill-desc">蛋小蓝向前方扔出头脑风暴，发生碰撞时会展开，高频攻击范围内敌人，每次造成<span style="color: var(--highlight-color); font-weight: bold;">42</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-蛋小黄">
+        <div class="detail-header">
+          <img src="/img/danxiaohuang/image_842706612341380.png" alt="蛋小黄">
+          <h2>蛋小黄</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>420</td></tr><tr><td>物理攻击力</td><td>33</td></tr><tr><td>物理防御</td><td>42（36+6） | 29%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>22 | 18%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">挥砍 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小黄挥舞手中的剑攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">33</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">神圣盾牌 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小黄的神圣盾牌保护着他，初始额外获得<span style="color: var(--highlight-color); font-weight: bold;">10%</span>物理防御，每升一级额外获得<span style="color: var(--highlight-color); font-weight: bold;">1%</span>物理防御。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">剑气波 <span class="skill-type">主动/伤害</span> <span class="skill-cd">6秒</span></div>
+        <div class="skill-desc">蛋小黄发出剑气波，对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">68</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">45</span>+<span style="color: var(--highlight-color); font-weight: bold;">70%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">旋风斩 <span class="skill-type">主动/伤害</span> <span class="skill-cd">7/6/5/4秒</span></div>
+        <div class="skill-desc">蛋小黄旋转一圈，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">70</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">90%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">滚动 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">20秒</span></div>
+        <div class="skill-desc">蛋小黄进入滚动状态，持续<span style="color: var(--highlight-color); font-weight: bold;">6</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。滚动期间，蛋小黄获得霸体与<span style="color: var(--highlight-color); font-weight: bold;">30%</span>减伤效果，撞击敌人时造成<span style="color: var(--highlight-color); font-weight: bold;">38</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力)。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-蛋小黑">
+        <div class="detail-header">
+          <img src="/img/danxiaohei/image_121157512549020.png" alt="蛋小黑">
+          <h2>蛋小黑</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>400</td></tr><tr><td>物理攻击力</td><td>40</td></tr><tr><td>物理防御</td><td>30 | 23%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>20 | 17%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">咸鱼棒 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小黑向前挥动咸鱼棒攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">40</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">捣蛋鬼 <span class="skill-type">被动/控制</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">蛋小黑受到敌人攻击时，若生命值低于<span style="color: var(--highlight-color); font-weight: bold;">35%</span>，会在原地放置一个惊吓箱并进入隐身，冷却<span style="color: var(--highlight-color); font-weight: bold;">60</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">投掷咸鱼 <span class="skill-type">主动/伤害</span> <span class="skill-cd">4秒</span></div>
+        <div class="skill-desc">蛋小黑向前投掷一发旋转咸鱼，对首个命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">70</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">隐身 <span class="skill-type">主动/伤害</span> <span class="skill-cd">15秒</span></div>
+        <div class="skill-desc">蛋小黑进入隐身状态。隐身期间提升<span style="color: var(--highlight-color); font-weight: bold;">4%</span>/<span style="color: var(--highlight-color); font-weight: bold;">8%</span>/<span style="color: var(--highlight-color); font-weight: bold;">12%</span>/<span style="color: var(--highlight-color); font-weight: bold;">16%</span>移动速度，普攻会获得强化。强化普攻会朝锁定的敌人方向砸下咸鱼棒，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">92</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">155%</span>物理攻击力)。释放技能或普攻会退出隐身。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">惊吓箱 <span class="skill-type">主动/控制</span> <span class="skill-cd">16秒</span></div>
+        <div class="skill-desc">蛋小黑向前方投掷一个惊吓箱。惊吓箱在触碰到首个敌人时会爆炸，使周围敌人受到<span style="color: var(--highlight-color); font-weight: bold;">80</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)并不受控制的逃离，持续<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-袋鼠嘟宝">
+        <div class="detail-header">
+          <img src="/img/daishudubao/image_106866740974276.png" alt="袋鼠嘟宝">
+          <h2>袋鼠嘟宝</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>440</td></tr><tr><td>物理攻击力</td><td>33</td></tr><tr><td>物理防御</td><td>35 | 26%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>22 | 18%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">左右勾拳 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">袋鼠嘟宝向身前释放左右勾拳攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">33</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">拳拳到肉 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">袋鼠嘟宝第<span style="color: var(--highlight-color); font-weight: bold;">3</span>次拳击伤害会形成两道拳风，每道造成<span style="color: var(--highlight-color); font-weight: bold;">20</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">15%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">滑步侧闪 <span class="skill-type">主动/位移</span> <span class="skill-cd">11/10/9/8秒</span></div>
+        <div class="skill-desc">袋鼠嘟宝向前快速滑步侧闪，<span style="color: var(--highlight-color); font-weight: bold;">8</span>秒内下次普攻获得强化，提升普攻距离，攻击方式变为朝锁定的敌人方向打出两段强化直拳，每拳造成<span style="color: var(--highlight-color); font-weight: bold;">43</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">上勾拳 <span class="skill-type">主动/控制</span> <span class="skill-cd">11秒</span></div>
+        <div class="skill-desc">袋鼠嘟宝向锁定的敌人方向快速打出上勾拳，对身前的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">51</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>物理攻击力)，同时击飞并眩晕敌人，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">拳胜时刻 <span class="skill-type">主动/增益</span> <span class="skill-cd">18秒</span></div>
+        <div class="skill-desc">袋鼠嘟宝进入拳胜姿态，立即对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">73</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">60</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力)并提升自身<span style="color: var(--highlight-color); font-weight: bold;">30</span>/<span style="color: var(--highlight-color); font-weight: bold;">50</span>/<span style="color: var(--highlight-color); font-weight: bold;">70</span>物理和法术防御，大招状态持续<span style="color: var(--highlight-color); font-weight: bold;">13</span>秒。被动：每次普攻命中敌人，会获得<span style="color: var(--highlight-color); font-weight: bold;">7%</span>攻击速度与<span style="color: var(--highlight-color); font-weight: bold;">2</span>.<span style="color: var(--highlight-color); font-weight: bold;">5%</span>移动速度，可叠加最多五层。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-雷霆太奶">
+        <div class="detail-header">
+          <img src="/img/leitingtainai/image_283862146968540.png" alt="雷霆太奶">
+          <h2>雷霆太奶</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>426</td></tr><tr><td>物理攻击力</td><td>29</td></tr><tr><td>物理防御</td><td>32 | 24%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>106</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>31</td></tr><tr><td>法术防御</td><td>24 | 19%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">投掷假发 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">雷霆太奶投掷假发攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">29</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">巅峰巧技 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">雷霆太奶每次使用技能对敌人造成伤害时，都会获得<span style="color: var(--highlight-color); font-weight: bold;">1</span>层「巅峰巧技」，当「巅峰巧技」达到<span style="color: var(--highlight-color); font-weight: bold;">20</span>层时，「掌心手雷」强化为<span style="color: var(--highlight-color); font-weight: bold;">2</span>次充能；当「巅峰巧技」达到<span style="color: var(--highlight-color); font-weight: bold;">40</span>层时，「魅力雷云」的劈击次数增加<span style="color: var(--highlight-color); font-weight: bold;">2</span>次；当「巅峰巧技」达到<span style="color: var(--highlight-color); font-weight: bold;">60</span>层时，「太奶间的羁绊」额外呼唤一名团员。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">掌心手雷 <span class="skill-type">主动/伤害</span> <span class="skill-cd">4秒</span></div>
+        <div class="skill-desc">雷霆太奶朝目标地点投掷手雷，手雷碰撞时会引爆，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">60</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">魅力雷云 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">10.5/10/9.5/9秒</span></div>
+        <div class="skill-desc">雷霆太奶朝目标方向投掷雷镖，雷镖命中首个敌人后会产生黏着的雷云并跟随目标，随后持续劈击周围敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">27</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>法术攻击力)。雷云一共劈击<span style="color: var(--highlight-color); font-weight: bold;">2</span>次，劈击间隔为<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒，每次劈击会麻痹敌人<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">太奶间的羁绊 <span class="skill-type">主动/增益</span> <span class="skill-cd">17/15/13秒</span></div>
+        <div class="skill-desc">雷霆太奶呼唤<span style="color: var(--highlight-color); font-weight: bold;">1</span>名雷霆太奶团员帮助自己，团员存活<span style="color: var(--highlight-color); font-weight: bold;">5</span>/<span style="color: var(--highlight-color); font-weight: bold;">7</span>/<span style="color: var(--highlight-color); font-weight: bold;">9</span>秒，期间会跟随雷霆太奶使用所有技能，造成的伤害为<span style="color: var(--highlight-color); font-weight: bold;">100%</span>。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-青年卢修斯">
+        <div class="detail-header">
+          <img src="/img/qingnianluxiusi/image_913272107443395.png" alt="青年卢修斯">
+          <h2>青年卢修斯</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>460</td></tr><tr><td>物理攻击力</td><td>32</td></tr><tr><td>物理防御</td><td>28 | 22%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>100</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>20 | 17%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">挖煤铲 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">卢修斯挥动铁铲攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">32</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">坚韧不屈 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">卢修斯拥有坚韧的性格，受到伤害时，获得(<span style="color: var(--highlight-color); font-weight: bold;">2</span>+<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">25</span>*自身等级)点的物理与法术防御，持续<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒，该效果可以叠加最多<span style="color: var(--highlight-color); font-weight: bold;">15</span>层。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">铁铲重击 <span class="skill-type">主动/伤害</span> <span class="skill-cd">7/6.5/6/5.5秒</span></div>
+        <div class="skill-desc">卢修斯用铁铲向下拍地，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">74</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理防御力+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>法术防御力)。自身每次受到伤害，会减少「铁铲重击」<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">75</span>秒冷却，该效果每<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">25</span>秒最多触发一次。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">飞石奇袭 <span class="skill-type">主动/控制/伤害</span> <span class="skill-cd">11秒</span></div>
+        <div class="skill-desc">卢修斯挥铲将煤灰洒向前方，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">20</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>物理攻击力)并减少目标<span style="color: var(--highlight-color); font-weight: bold;">30%</span>移动速度，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。该技能未命中敌人，会返还自身<span style="color: var(--highlight-color); font-weight: bold;">50%</span>冷却；命中敌人后<span style="color: var(--highlight-color); font-weight: bold;">6</span>秒内，可释放下一段「破土动工」，对范围内的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">61</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">45</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)并将目标朝自身方向击飞并眩晕，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">快速通道 <span class="skill-type">主动/位移</span> <span class="skill-cd">28秒</span></div>
+        <div class="skill-desc">卢修斯钻入地下挖掘一条持续<span style="color: var(--highlight-color); font-weight: bold;">8</span>秒，可供己方队友使用一次的单向通行隧道，钻出地面时，对出口上方敌人造成<span style="color: var(--highlight-color); font-weight: bold;">77</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">40%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理防御力+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>法术防御力)和<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">25</span>s击飞眩晕效果。技能期间，钻地者获得霸体效果且无法被选中。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-饶舌诗人">
+        <div class="detail-header">
+          <img src="/img/raosheshiren/image_466506704859664.png" alt="饶舌诗人">
+          <h2>饶舌诗人</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>380</td></tr><tr><td>物理攻击力</td><td>27</td></tr><tr><td>物理防御</td><td>25 | 20%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>100</td></tr><tr><td>法术攻击力</td><td>25</td></tr><tr><td>法术防御</td><td>22 | 18%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>10%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">重音 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">饶舌诗人打响指发出一个重音攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">27</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">快嘴 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">饶舌诗人快嘴说唱，初始获得<span style="color: var(--highlight-color); font-weight: bold;">10%</span>冷却缩减，每升一级额外获得<span style="color: var(--highlight-color); font-weight: bold;">1%</span>冷却缩减。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">律动节拍 <span class="skill-type">主动/伤害</span> <span class="skill-cd">3.5秒</span></div>
+        <div class="skill-desc">饶舌诗人三连押发出三个「音符」。每个「音符」会对命中的敌人造成<span style="color: var(--highlight-color); font-weight: bold;">24</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">15</span>+<span style="color: var(--highlight-color); font-weight: bold;">35%</span>法术攻击力)并添加一层「押韵」，达到四层时对目标造成<span style="color: var(--highlight-color); font-weight: bold;">50</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">25</span>+<span style="color: var(--highlight-color); font-weight: bold;">100%</span>法术攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">说唱领域 <span class="skill-type">主动/控制</span> <span class="skill-cd">14/13/12/11秒</span></div>
+        <div class="skill-desc">饶舌诗人扔出话筒，发生碰撞时产生音波并向四周扩散，触碰音波的敌人会受到<span style="color: var(--highlight-color); font-weight: bold;">45</span>法术伤害(<span style="color: var(--highlight-color); font-weight: bold;">30</span>+<span style="color: var(--highlight-color); font-weight: bold;">60%</span>法术攻击力)并不受控制的逃离，持续<span style="color: var(--highlight-color); font-weight: bold;">2</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">说唱天王 <span class="skill-type">主动/伤害</span> <span class="skill-cd">22/20/18秒</span></div>
+        <div class="skill-desc">饶舌诗人展现天王本色，向四周不断发射「音符」，持续<span style="color: var(--highlight-color); font-weight: bold;">4</span>秒。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-魔鬼蛋">
+        <div class="detail-header">
+          <img src="/img/moguidan/image_012197935194326.png" alt="魔鬼蛋">
+          <h2>魔鬼蛋</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>480</td></tr><tr><td>物理攻击力</td><td>30</td></tr><tr><td>物理防御</td><td>35 | 26%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>100</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>25 | 20%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">右勾拳 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">魔鬼蛋向前打出一记右勾拳攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">30</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">强身健体 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">魔鬼蛋初始体型变小<span style="color: var(--highlight-color); font-weight: bold;">10%</span>，每升一级体型变大<span style="color: var(--highlight-color); font-weight: bold;">3%</span>，同时增加<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5%</span>最大生命值。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">冲锋 <span class="skill-type">主动/伤害</span> <span class="skill-cd">9/8/7/6秒</span></div>
+        <div class="skill-desc">魔鬼蛋向前快速冲锋，冲锋期间获得<span style="color: var(--highlight-color); font-weight: bold;">30%</span>减伤效果，击退路径上的敌人并造成<span style="color: var(--highlight-color); font-weight: bold;">53</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">60%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">过肩摔 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">8秒</span></div>
+        <div class="skill-desc">魔鬼蛋将锁定的敌人抓住使劲摔向身后，造成<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒眩晕和<span style="color: var(--highlight-color); font-weight: bold;">58</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">75%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">炮拳 <span class="skill-type">主动/伤害</span> <span class="skill-cd">16秒</span></div>
+        <div class="skill-desc">魔鬼蛋原地短暂蓄力后打出一记威力恐怖的炮拳，击退范围内的敌人并造成<span style="color: var(--highlight-color); font-weight: bold;">140</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100</span>+<span style="color: var(--highlight-color); font-weight: bold;">135%</span>物理攻击力)。蓄力期间，魔鬼蛋获得霸体效果。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="char-detail" id="detail-黑拳瓦格纳">
+        <div class="detail-header">
+          <img src="/img/heiquanwagena/image_150039940263218.png" alt="黑拳瓦格纳">
+          <h2>黑拳瓦格纳</h2>
+        </div>
+        <div class="detail-content">
+          <div class="stats-section">
+            <h3>属性</h3>
+            <table class="stats-table"><tr><td>最大生命值</td><td>425</td></tr><tr><td>物理攻击力</td><td>37</td></tr><tr><td>物理防御</td><td>38 | 28%</td></tr><tr><td>物理穿透</td><td>0</td></tr><tr><td>物理穿透百分比</td><td>0%</td></tr><tr><td>物理暴击</td><td>0%</td></tr><tr><td>物理暴击伤害</td><td>150%</td></tr><tr><td>普攻物理吸血</td><td>0%</td></tr><tr><td>攻击速度加成</td><td>105</td></tr><tr><td>移动速度</td><td>121</td></tr><tr><td>法术攻击力</td><td>15</td></tr><tr><td>法术防御</td><td>21 | 17%</td></tr><tr><td>法术穿透</td><td>0</td></tr><tr><td>法术穿透百分比</td><td>0%</td></tr><tr><td>法术暴击</td><td>0%</td></tr><tr><td>法术暴击伤害</td><td>150%</td></tr><tr><td>法术伤害吸血</td><td>0%</td></tr><tr><td>冷却缩减</td><td>0%</td></tr></table>
+          </div>
+          <div class="skills-section">
+            <h3>技能</h3>
+            
+      <div class="skill-item">
+        <div class="skill-name">钢铁拳套 <span class="skill-type">普攻/物理攻击</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">瓦格纳左右挥拳攻击敌人，造成<span style="color: var(--highlight-color); font-weight: bold;">37</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">100%</span>物理攻击力)。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">钢铁意志 <span class="skill-type">被动/增益</span> <span class="skill-cd"></span></div>
+        <div class="skill-desc">瓦格纳获得的每<span style="color: var(--highlight-color); font-weight: bold;">30</span>点额外生命值会为他提供<span style="color: var(--highlight-color); font-weight: bold;">1</span>点物理攻击力。当生命值低于<span style="color: var(--highlight-color); font-weight: bold;">30%</span>时，获得基于自身<span style="color: var(--highlight-color); font-weight: bold;">40%</span>最大生命值的护盾，护盾值在<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒内持续衰减。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">钢铁格挡 <span class="skill-type">主动/伤害/控制</span> <span class="skill-cd">12秒</span></div>
+        <div class="skill-desc">瓦格纳进入招架姿态，<span style="color: var(--highlight-color); font-weight: bold;">0</span>.<span style="color: var(--highlight-color); font-weight: bold;">75</span>秒内会格挡一次来自敌方英雄的普攻或技能伤害。格挡失败会返还<span style="color: var(--highlight-color); font-weight: bold;">50%</span>冷却，成功格挡后获得<span style="color: var(--highlight-color); font-weight: bold;">89</span>护盾(<span style="color: var(--highlight-color); font-weight: bold;">35</span>+<span style="color: var(--highlight-color); font-weight: bold;">30%</span>物理攻击力+<span style="color: var(--highlight-color); font-weight: bold;">10%</span>自身最大生命值)，并在后<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒内，可释放二段「撼地重击」，擒住敌人后跳向空中，随后砸向地面，对被抱摔的目标造成<span style="color: var(--highlight-color); font-weight: bold;">59</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)并眩晕<span style="color: var(--highlight-color); font-weight: bold;">1</span>秒，对范围内其他敌人造成<span style="color: var(--highlight-color); font-weight: bold;">59</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">40</span>+<span style="color: var(--highlight-color); font-weight: bold;">50%</span>物理攻击力)并减速<span style="color: var(--highlight-color); font-weight: bold;">50%</span>，持续<span style="color: var(--highlight-color); font-weight: bold;">1</span>.<span style="color: var(--highlight-color); font-weight: bold;">5</span>秒。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">钢铁崩拳 <span class="skill-type">主动/伤害/增益</span> <span class="skill-cd">6.5/6/5.5/5秒</span></div>
+        <div class="skill-desc">瓦格纳获得一个<span style="color: var(--highlight-color); font-weight: bold;">3</span>秒内持续衰减的<span style="color: var(--highlight-color); font-weight: bold;">45%</span>移动速度提升，期间可以再次释放该技能，会朝目标方向位移同时打出崩拳，击退首个命中的敌方蛋仔，并对目标和目标身后敌人造成<span style="color: var(--highlight-color); font-weight: bold;">90</span>物理伤害(<span style="color: var(--highlight-color); font-weight: bold;">60</span>+<span style="color: var(--highlight-color); font-weight: bold;">80%</span>物理攻击力)。如果只命中一个目标，伤害提升<span style="color: var(--highlight-color); font-weight: bold;">30%</span>。</div>
+      </div>
+    
+      <div class="skill-item">
+        <div class="skill-name">地下擂台 <span class="skill-type">主动/增益/控制</span> <span class="skill-cd">35秒</span></div>
+        <div class="skill-desc">瓦格纳指定一名敌人并将其拖入擂台进行决斗，持续<span style="color: var(--highlight-color); font-weight: bold;">8</span>秒，擂台上双方不会受到外界干扰。擂台上的瓦格纳会获得强化：<span style="color: var(--highlight-color); font-weight: bold;">1</span>. 进入时立即刷新基础技能冷却；<span style="color: var(--highlight-color); font-weight: bold;">2</span>. 无需格挡成功也可解锁「撼地重击」；<span style="color: var(--highlight-color); font-weight: bold;">3</span>.「钢铁崩拳」冷却时再返还<span style="color: var(--highlight-color); font-weight: bold;">20%</span>/<span style="color: var(--highlight-color); font-weight: bold;">30%</span>/<span style="color: var(--highlight-color); font-weight: bold;">40%</span>。在擂台上击败敌人后，会获得<span style="color: var(--highlight-color); font-weight: bold;">20</span>/<span style="color: var(--highlight-color); font-weight: bold;">25</span>/<span style="color: var(--highlight-color); font-weight: bold;">30</span>点物理攻击力提升，持续<span style="color: var(--highlight-color); font-weight: bold;">15</span>秒。</div>
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+  </div>
+
+  <script>
+    let settingsOpen = false;
+    
+    // 预加载功能
+    function preloadResources() {
+      const loadingScreen = document.getElementById('loadingScreen');
+      const loadingBar = document.getElementById('loadingBar');
+      const loadingText = document.querySelector('.loading-text');
+      
+      // 资源列表
+      const resources = [
+        '/img/main.png',
+        '/img/shezhi.png',
+        '/mp3/BGM.mp3'
+      ];
+      
+      // 预加载图片
+      let loaded = 0;
+      const total = resources.length;
+      
+      resources.forEach(resource => {
+        if (resource.endsWith('.png') || resource.endsWith('.jpg')) {
+          const img = new Image();
+          img.onload = () => updateProgress();
+          img.onerror = () => updateProgress();
+          img.src = resource;
+        } else if (resource.endsWith('.mp3')) {
+          const audio = new Audio();
+          audio.onloadeddata = () => updateProgress();
+          audio.onerror = () => updateProgress();
+          audio.src = resource;
+        }
+      });
+      
+      function updateProgress() {
+        loaded++;
+        const progress = (loaded / total) * 100;
+        loadingBar.style.width = progress + '%';
+        loadingText.textContent = '加载中... ' + Math.round(progress) + '%';
+        
+        if (loaded >= total) {
+          setTimeout(() => {
+            loadingScreen.style.display = 'none';
+          }, 500);
+        }
+      }
+    }
+    
+    // 页面加载完成后开始预加载
+    window.addEventListener('load', () => {
+      preloadResources();
+    });
+    
+    function showDetail(name) {
+      document.getElementById('modal').classList.add('active');
+      document.querySelectorAll('.char-detail').forEach(el => el.style.display = 'none');
+      document.getElementById('detail-' + name).style.display = 'block';
+      document.body.style.overflow = 'hidden';
+    }
+    
+    // 点击空白处收起所有打开的内容
+    document.addEventListener('click', (e) => {
+      const modal = document.getElementById('modal');
+      const settingsPanel = document.getElementById('settingsPanel');
+      const settingsBtn = document.querySelector('.settings-btn');
+      const charCard = e.target.closest('.char-card');
+      
+      // 点击角色卡片时不触发空白处收起
+      if (charCard) {
+        return;
+      }
+      
+      // 点击模态框外的区域
+      if (modal.classList.contains('active') && !e.target.closest('.char-detail') && !e.target.closest('.close-btn')) {
+        closeModal();
+      }
+      
+      // 点击设置面板外的区域
+      if (settingsPanel.classList.contains('active') && !e.target.closest('.settings-panel') && !e.target.closest('.settings-btn')) {
+        settingsPanel.classList.remove('active');
+        settingsOpen = false;
+      }
+    });
+    function closeModal() {
+      document.getElementById('modal').classList.remove('active');
+      document.body.style.overflow = 'auto';
+    }
+    
+    // 页面加载完成后添加模态框点击事件
+    window.addEventListener('load', () => {
+      document.getElementById('modal').addEventListener('click', function(e) {
+        if (e.target === this) closeModal();
+      });
+    });
+
+    // Settings functionality
+    const themeColors = {
+      red: { primary: '#ff6b35', secondary: '#f7931e' },
+      blue: { primary: '#4ecdc4', secondary: '#44a08d' },
+      purple: { primary: '#9b59b6', secondary: '#8e44ad' },
+      green: { primary: '#2ecc71', secondary: '#27ae60' },
+      orange: { primary: '#e67e22', secondary: '#d35400' }
+    };
+    
+    // 十六进制转RGB
+    function hexToRgb(hex) {
+      const result = /^#?([a-fd]{2})([a-fd]{2})([a-fd]{2})$/i.exec(hex);
+      return result ? {
+        r: parseInt(result[1], 16),
+        g: parseInt(result[2], 16),
+        b: parseInt(result[3], 16)
+      } : null;
+    }
+
+    function toggleSettings() {
+      const panel = document.getElementById('settingsPanel');
+      settingsOpen = !settingsOpen;
+      panel.classList.toggle('active', settingsOpen);
+    }
+
+    function changeTheme(themeName) {
+      const theme = themeColors[themeName];
+      document.documentElement.style.setProperty('--primary-color', theme.primary);
+      document.documentElement.style.setProperty('--secondary-color', theme.secondary);
+      
+      // 设置RGB值用于rgba
+      const rgb = hexToRgb(theme.primary);
+      if (rgb) {
+        document.documentElement.style.setProperty('--primary-color-rgb', rgb.r + ', ' + rgb.g + ', ' + rgb.b);
+      }
+
+      // Update active theme indicator
+      document.querySelectorAll('.theme-option').forEach(option => {
+        option.classList.remove('active');
+      });
+      document.querySelector('.theme-' + themeName).classList.add('active');
+    }
+    
+    // 改变高亮颜色
+    function changeHighlightColor(color) {
+      document.documentElement.style.setProperty('--highlight-color', color);
+    }
+    
+    // BGM播放功能
+    let bgm = null;
+    let isBgmPlaying = false;
+    
+    // 初始化BGM
+    function initBGM() {
+      bgm = new Audio('/mp3/BGM.mp3');
+      bgm.loop = true;
+      bgm.volume = 0.3;
+    }
+    
+    // 播放/暂停BGM
+    function toggleBGM() {
+      if (!bgm) {
+        initBGM();
+      }
+      
+      if (isBgmPlaying) {
+        bgm.pause();
+        document.getElementById('bgmStatus').textContent = '已暂停';
+      } else {
+        bgm.play().catch(err => {
+          console.log('BGM播放失败:', err);
+          document.getElementById('bgmStatus').textContent = '播放失败';
+        });
+        document.getElementById('bgmStatus').textContent = '播放中';
+      }
+      isBgmPlaying = !isBgmPlaying;
+    }
+    
+    // 页面加载完成后初始化BGM
+    window.addEventListener('load', () => {
+      initBGM();
+      document.getElementById('bgmStatus').textContent = '加载完成，等待播放';
+      
+      // 尝试自动播放BGM
+      bgm.play().then(() => {
+        isBgmPlaying = true;
+        document.getElementById('bgmStatus').textContent = '播放中';
+      }).catch(err => {
+        console.log('自动播放BGM失败:', err);
+        document.getElementById('bgmStatus').textContent = '点击页面任意位置开始播放';
+        
+        // 监听用户交互，允许播放BGM
+        document.addEventListener('click', () => {
+          if (!isBgmPlaying && bgm) {
+            bgm.play().catch(err => {
+              console.log('BGM播放失败:', err);
+              document.getElementById('bgmStatus').textContent = '播放失败';
+            });
+            isBgmPlaying = true;
+            document.getElementById('bgmStatus').textContent = '播放中';
+          }
+        }, { once: true });
+      });
+    });
+
+    // Initialize theme
+    changeTheme('red');
+
+    // Apply theme to all relevant elements
+    function applyThemeStyles(theme) {
+      const root = document.documentElement;
+      root.style.setProperty('--primary-color', theme.primary);
+      root.style.setProperty('--secondary-color', theme.secondary);
+      
+      // 设置RGB值用于rgba
+      const rgb = hexToRgb(theme.primary);
+      if (rgb) {
+        root.style.setProperty('--primary-color-rgb', rgb.r + ', ' + rgb.g + ', ' + rgb.b);
+      }
+      
+      // Update character card borders
+      document.querySelectorAll('.char-card').forEach(card => {
+        card.style.borderColor = 'rgba(255,107,53,0.2)';
+        card.addEventListener('mouseover', () => {
+          card.style.borderColor = theme.primary;
+        });
+        card.addEventListener('mouseout', () => {
+          card.style.borderColor = 'rgba(255,107,53,0.2)';
+        });
+      });
+      
+      // Update detail panel borders
+      document.querySelectorAll('.char-detail').forEach(detail => {
+        detail.style.borderColor = theme.primary;
+      });
+      
+      // Update skill items
+      document.querySelectorAll('.skill-item').forEach(item => {
+        item.style.borderLeftColor = theme.primary;
+        item.style.background = 'rgba(255,107,53,0.1)';
+      });
+      
+      // Update section headers
+      document.querySelectorAll('h3').forEach(header => {
+        header.style.color = theme.primary;
+      });
+      
+      // Update main title
+      document.querySelector('h1').style.color = theme.primary;
+      document.querySelector('h1').style.textShadow = '0 0 20px rgba(255,107,53,0.5)';
+    }
+
+    // Helper to convert hex to RGB values
+    function hexToRgb(hex) {
+      const r = parseInt(hex.slice(1,3),16);
+      const g = parseInt(hex.slice(3,5),16);
+      const b = parseInt(hex.slice(5,7),16);
+      return r + ', ' + g + ', ' + b;
+    }
+
+    // Override changeTheme to apply styles
+    function changeTheme(themeName) {
+      const theme = themeColors[themeName];
+      applyThemeStyles(theme);
+
+      // Update active theme indicator
+      document.querySelectorAll('.theme-option').forEach(option => {
+        option.classList.remove('active');
+      });
+      document.querySelector('.theme-' + themeName).classList.add('active');
+    }
+  </script>
+</body>
+</html>
